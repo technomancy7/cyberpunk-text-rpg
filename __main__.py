@@ -9,11 +9,17 @@ import objects
 # define a main function
 class Main:
     def main_screen(self):
-        # TECHNO: test code to see if display is working
+        # Background colour
         self.screen.fill((0,0,0))
         
+        
+        size = 100 # Size of the text log box
+        pygame.draw.rect(self.screen,(0,255,255),(0,self.cfg["winsize"][1]-size,self.cfg["winsize"][0],size),3)
+        
     def __init__(self):
+        # Variable for the current "scene", which handles the current screen rendering
         self.current_scene = self.main_screen
+        
         self.cfg = {}
         with open("config.json", "r+") as f:
             self.cfg = json.load(f)
