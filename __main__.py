@@ -25,6 +25,7 @@ def main():
     # define a variable to control the main loop
     running = True
     
+    
     i = 0
     
     # main loop
