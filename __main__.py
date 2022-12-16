@@ -8,13 +8,31 @@ import objects
 
 # define a main function
 class Main:
+    def draw_text(self, x, y, text, *, font = "Comic Sans MS", size = 30, colour=(255, 255, 255)):
+        # pick a font you have and set its size
+        myfont = pygame.font.SysFont(font, size)
+        # apply it to text on a label
+        label = myfont.render(text, 1, colour)
+        # put the label object on the screen at point x=100, y=100
+        self.screen.blit(label, (x, y))
+
     def main_screen(self):
         # Background colour
         self.screen.fill((0,0,0))
         
         
-        size = 100 # Size of the text log box
-        pygame.draw.rect(self.screen,(0,255,255),(0,self.cfg["winsize"][1]-size,self.cfg["winsize"][0],size),3)
+        size = 200 # Size of the text log box
+        height = self.cfg["winsize"][1]-size
+        width = self.cfg["winsize"][0]
+        pygame.draw.rect(self.screen,(0,255,255), (0, height, width, size), 3)
+        
+
+        pygame.draw.rect(self.screen, (125,255,255), (0, 0, 300, height), 3) 
+        
+        
+        self.draw_text(20, 30, "Field/tile display")
+        self.draw_text(400, 30, "Stats/info/controls")
+        self.draw_text(20, 300, "Text log")
         
     def __init__(self):
         # Variable for the current "scene", which handles the current screen rendering
@@ -26,7 +44,8 @@ class Main:
             
         # initialize the pygame module
         pygame.init()
-
+        pygame.font.init()
+        
         # load and set the logo
         #logo = pygame.image.load("logo32x32.png")
         #pygame.display.set_icon(logo)

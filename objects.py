@@ -13,6 +13,8 @@ class Entity(TObject):
         self.ID = ID
         self.x = 0 # X position on screen
         self.y = 0 # Y position on screen
+        self.grid_x = 0 # X slot on the grid
+        self.grid_y = 0 # Y slot on grid
         self.sprite = None # Display image
         self.hidden = False # Wether it's being rendered'
         self.zone = None # Zone the entity is inside
@@ -21,6 +23,7 @@ class Entity(TObject):
     def move_pos(self, x, y):
         self.x = x
         self.y = y
+        #@todo math here to make x/y screen map to the grid
 
 # The Player!
 class Player(Entity):
