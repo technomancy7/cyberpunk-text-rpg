@@ -6,10 +6,14 @@ import json
 import objects
 
 
-
 # define a main function
 class Main:
+    def main_screen(self):
+        # TECHNO: test code to see if display is working
+        self.screen.fill((0,0,0))
+        
     def __init__(self):
+        self.current_scene = self.main_screen
         self.cfg = {}
         with open("config.json", "r+") as f:
             self.cfg = json.load(f)
@@ -45,9 +49,9 @@ class Main:
                     # change the value to False, to exit the main loop
                     self.running = False
 
-            # TECHNO: test code to see if display is working
-            self.screen.fill((0,0,0))
             
+            
+            self.current_scene()
             
             # Updates the display
             pygame.display.flip()
