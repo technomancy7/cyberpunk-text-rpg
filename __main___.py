@@ -5,7 +5,6 @@ import pygame
 import json
 import objects
 
-
 # define a main function
 class Main:
     def draw_text(self, x, y, text, *, font = "Comic Sans MS", size = 30, colour=(255, 255, 255)):
