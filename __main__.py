@@ -8,7 +8,8 @@ import objects
 class JEScreens:
     def main_scene(self):
         # Background colour
-        self.screen.fill((0,0,0))
+        self.screen.fill(self.bg_colour)
+        self.shift_bg()
         
         
         size = 200 # Size of the text log box
@@ -51,6 +52,10 @@ class JEScreens:
                 break
 
 class Main(objects.JEState, JEScreens, objects.JECommand):
+    def can_input(self) -> bool:
+        if self.current_scene == self.main_scene: return True
+        return False
+
     def draw_text(self, x, y, text, *, fontfile = "", sysfont = "", size = 30, colour=(255, 255, 255)):
         # pick a font you have and set its size
         myfont = None
@@ -70,11 +75,38 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         # put the label object on the screen at point
         self.screen.blit(label, (x, y))
         
+    def set_bg(self, colour, speed = None):
+        if speed: self.bf_shift_speed = speed
+        self._proxy_bg_colour = colour
+
+    def shift_bg(self):
+        if self.bg_colour[0] < self._proxy_bg_colour[0]:
+            self.bg_colour[0] += self.bg_shift_speed
+
+        if self.bg_colour[0] > self._proxy_bg_colour[0]:
+            self.bg_colour[0] -= self.bg_shift_speed
+
+        if self.bg_colour[1] < self._proxy_bg_colour[1]:
+            self.bg_colour[1] += self.bg_shift_speed
+
+        if self.bg_colour[1] > self._proxy_bg_colour[1]:
+            self.bg_colour[1] -= self.bg_shift_speed
+
+        if self.bg_colour[2] < self._proxy_bg_colour[2]:
+            self.bg_colour[2] += self.bg_shift_speed
+
+        if self.bg_colour[2] > self._proxy_bg_colour[2]:
+            self.bg_colour[2] -= self.bg_shift_speed
+
     def __init__(self):
         # Variable for the current "scene", which handles the current screen rendering
         self.current_scene = self.main_scene
         self.FONT_FILE = "term.ttf"
         self.cfg = {}
+        self.bg_colour = (0, 0, 0)
+        self._proxy_bg_colour = (0, 0, 0)
+        self.bf_shift_speed = 0.2
+
         with open("config.json", "r+") as f:
             self.cfg = json.load(f)
             
@@ -111,7 +143,7 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         if(event.unicode):
             #print(event)
             #print(event.unicode)
-            if self.current_scene == self.main_scene:
+            if self.can_input():
                 if event.key == 13:
                     #print("Sending")
                     current_cmd = self.text_input_ln

@@ -2,7 +2,12 @@
 class JECommand:
     def parse_command(self, ln):
         print(f"Recv {ln}") 
-        
+
+        cmd = ln.split(" ")[0]
+        args = " ".join(ln.split(" ")[1:])
+
+        print(cmd)
+        print(args)
 class JEState:
     def _actor(self, **args):
         o = {
