@@ -1,4 +1,48 @@
- 
+
+class JECommand:
+    def parse_command(self, ln):
+        print(f"Recv {ln}") 
+        
+class JEState:
+    def _actor(self, **args):
+        o = {
+            "id": "", 
+            "name": "DEFAULT_NAME", 
+            "description": "DEFAULT_DESCRIPTION", 
+            "contains": [], 
+            "location": "",
+            "type": "actor",
+            "events": {}
+        }
+        o.update(**args)
+        self.entities.append(o)
+        return o
+
+    def _zone(self, **args):
+        o = {
+            "id": "", 
+            "name": "DEFAULT_NAME", 
+            "description": "DEFAULT_DESCRIPTION", 
+            "contains": [], 
+            "type": "zone",
+            "exits": {},
+            "events": {}
+        }
+
+        for d in self._directions():
+            o["exits"][d] = {
+                "target": "",
+                "locked": False,
+                "events": {
+                    "on_exit": [], 
+                    "on_exit_failed": []
+                }
+            }
+
+        o.update(**args)
+        self.zones.append(o)
+        return o
+# 
 # Base class of all in-world objects
 class TObject:
     pass
