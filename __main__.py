@@ -76,10 +76,12 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         self.screen.blit(label, (x, y))
         
     def set_bg(self, colour, speed = None):
-        if speed: self.bf_shift_speed = speed
+        if speed: self.bg_shift_speed = speed
         self._proxy_bg_colour = colour
 
-    def shift_bg(self):
+    def shift_bg(self, speed = None):
+        if speed: self.bg_shift_speed = speed
+        
         if self.bg_colour[0] < self._proxy_bg_colour[0]:
             self.bg_colour[0] += self.bg_shift_speed
 
@@ -103,9 +105,10 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         self.current_scene = self.main_scene
         self.FONT_FILE = "term.ttf"
         self.cfg = {}
-        self.bg_colour = (0, 0, 0)
-        self._proxy_bg_colour = (0, 0, 0)
-        self.bf_shift_speed = 0.2
+
+        self.bg_colour = [0, 0, 0]
+        self._proxy_bg_colour = [0, 0, 0]
+        self.bg_shift_speed = 0.2
 
         with open("config.json", "r+") as f:
             self.cfg = json.load(f)

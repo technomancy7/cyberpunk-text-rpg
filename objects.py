@@ -8,6 +8,19 @@ class JECommand:
 
         print(cmd)
         print(args)
+
+        match cmd:
+            case "quit":
+                exit()
+
+            case "bg":
+                a = args.split(" ")
+                if len(a) == 3:
+                    print("bg [", a, "]")
+                    a = [int(element) for element in a]
+                    self.set_bg(a)
+                else:
+                    print("Invalid")
 class JEState:
     def _actor(self, **args):
         o = {
