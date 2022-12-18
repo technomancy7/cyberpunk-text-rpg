@@ -24,6 +24,8 @@ class JEScreens:
         self.draw_text(20, 30, "Field/tile display")
         self.draw_text(400, 30, "Stats/info/controls")
 
+        self.write(3, 9, "Test BitMap font sentence")
+        self.write(3, 10, "ALLCAPS TEST 0123456789")
 
         # Text log and input
         text_input_size = 25
@@ -52,6 +54,29 @@ class JEScreens:
                 break
 
 class Main(objects.JEState, JEScreens, objects.JECommand):
+
+    def write(self, x, y, text):
+        test_font = pygame.image.load('testfont.bmp')
+        length = range(len(text))
+        
+        for i in length:
+            ch = text[i]
+
+            # don't blit if it's a space
+            if ch == ' ':
+                x += 1
+                continue
+            
+            # character sheet starts at '!'
+            id = ord(ch) - 33
+            self.sprite_draw(test_font, x * 8, y * 8, 8, 8, id)
+            x += 1
+
+    def sprite_draw(self, image, x, y, width, height, id):
+        source_x = (id % 8) * width
+        source_y = (id // 8) * height
+        self.screen.blit(image, (x, y), (source_x, source_y, width, height))
+
     def can_input(self) -> bool:
         if self.current_scene == self.main_scene: return True
         return False
