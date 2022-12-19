@@ -22,15 +22,30 @@ class JECommand:
                 else:
                     print("Invalid")
 class JEState:
-    def _actor(self, **args):
+    def get_zone(self, tag):
+        if type(tag) == dict: return tag
+        for zone in self.zones:
+            if zone["tag"] == tag: return zone
+
+    def get_entity(self, tag):
+        if type(tag) == dict: return tag
+        for entity in self.entities:
+            if entity["tag"] == tag: return entity
+
+
+    def _entity(self, **args):
         o = {
-            "id": "", 
+            "tag": "", 
             "name": "DEFAULT_NAME", 
             "description": "DEFAULT_DESCRIPTION", 
             "contains": [], 
             "location": "",
             "type": "actor",
-            "events": {}
+            "events": {},
+            "sprite": None,
+            "direction": "d",
+            "solid": True,
+            "hidden": False
         }
         o.update(**args)
         self.entities.append(o)
@@ -38,24 +53,18 @@ class JEState:
 
     def _zone(self, **args):
         o = {
-            "id": "", 
+            "tag": "", 
             "name": "DEFAULT_NAME", 
             "description": "DEFAULT_DESCRIPTION", 
             "contains": [], 
             "type": "zone",
-            "exits": {},
-            "events": {}
+            "events": {},
+            "map": [
+                #{"loc": [0,0], "tiles": []}
+            ]
         }
 
-        for d in self._directions():
-            o["exits"][d] = {
-                "target": "",
-                "locked": False,
-                "events": {
-                    "on_exit": [], 
-                    "on_exit_failed": []
-                }
-            }
+
 
         o.update(**args)
         self.zones.append(o)
