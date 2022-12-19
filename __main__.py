@@ -51,6 +51,8 @@ class JEScreens:
             if current >= limit:
                 break
 
+        
+        self.write_bmp(0, height, "Health:")
 
         # field display
         player = self.get_entity(self.player)
@@ -72,7 +74,7 @@ class JEScreens:
                 for entity in self.entities:
                     if not entity["hidden"] and entity["sprite"] and entity["location"] == cur_loc["tag"]:
                         self.draw_entity(entity)
-
+        # Border around the field
         pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 3)
 
 class Main(objects.JEState, JEScreens, objects.JECommand):
@@ -94,7 +96,7 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         else:
             self.screen.blit(spr, (real_x, real_y))
 
-    def write(self, x, y, text):
+    def write_bmp(self, x, y, text):
         length = range(len(text))
         
         for i in length:
@@ -107,10 +109,10 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
             
             # character sheet starts at '!'
             id = ord(ch) - 33
-            self.sprite_draw(self.bitmap_font, x * 8, y * 8, 8, 8, id)
+            self.fbmp(self.bitmap_font, x * 8, y * 8, 8, 8, id)
             x += 1
 
-    def sprite_draw(self, image, x, y, width, height, id):
+    def fbmp(self, image, x, y, width, height, id):
         source_x = (id % 8) * width
         source_y = (id // 8) * height
         self.screen.blit(image, (x, y), (source_x, source_y, width, height))
@@ -119,7 +121,7 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         if self.current_scene == self.main_scene: return True
         return False
 
-    def draw_text(self, x, y, text, *, fontfile = "", sysfont = "", size = 30, colour=(255, 255, 255)):
+    def write_text(self, x, y, text, *, fontfile = "", sysfont = "", size = 30, colour=(255, 255, 255)):
         # pick a font you have and set its size
         myfont = None
 
