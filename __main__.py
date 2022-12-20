@@ -4,7 +4,12 @@
 import pygame
 import json
 import objects
+import os
+import sys
 
+print(os.getcwd())
+app_path = os.path.dirname(os.path.realpath(__file__))+"/"
+print(app_path)
 class JEScreens:
     def main_scene(self):
         player = self.get_entity(self.player)
@@ -46,7 +51,6 @@ class JEScreens:
             if current == limit:
                 colour = (255, 255, 255, 255)
 
-            #print(msg, colour)
             sym = "*"
             if msg.startswith("$ "): 
                 sym = "$"
@@ -57,6 +61,7 @@ class JEScreens:
             if current >= limit:
                 break
 
+        
         
         #self.write_bmp(0, height+100, "Health: ")
         text_col = 45
@@ -98,8 +103,43 @@ class JEScreens:
         self.write_bmp(text_col, 9, f"Health: {hp}% ({player['health']}/{player['health_max']})")
         self.write_bmp(text_col, 10, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
         
+        cursor = self.screen_to_tile(pygame.mouse.get_pos())
+        #print(pygame.mouse.get_pressed())
+        
+
+        for button in self.buttons:
+            xy = button["pos"]
+            img = button["spr"]
+            img_highlight = button["spr_hl"]
+
+            if cursor == xy:
+                self.draw_arbitrary(xy, img_highlight)
+            else:
+                self.draw_arbitrary(xy, img)
+        """
+        self.draw_arbitrary([11, 10], "diamond_dark")
+        self.draw_arbitrary([12, 10], "diamond_dark")
+        self.draw_arbitrary([13, 10], "diamond_dark")
+
+        up_arrow = [12, 9]
+        self.draw_arbitrary(up_arrow, "diamond_dark")
+
+        """
 
 class Main(objects.JEState, JEScreens, objects.JECommand):
+    def screen_to_tile(self, xy):
+        real_x = int(xy[0] / self.tile_size)
+        real_y = int(xy[1] / self.tile_size)
+        return [real_x, real_y]
+
+    def tile_to_screen(self, xy):
+        real_x = xy[0] * self.tile_size
+        real_y = xy[1] * self.tile_size
+        return [real_x, real_y]
+
+    def draw_button(self, xy, spr, spr_highlight):
+        pass
+
     def draw_arbitrary(self, xy, spr):
         real_x = xy[0] * self.tile_size
         real_y = xy[1] * self.tile_size
@@ -197,27 +237,65 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         self.player = "player"
         
         self._entity(tag="player", sprite="player", x=2, y=2, location="the_bar", alliance="player")
-        self._entity(tag="friendly_circle", sprite="circle", x=6, y=6, location="the_bar")
-        self.set_hostility("friendly_circle", "player", 1)
-        self._entity(tag="hostile_circle", sprite="circle", x=6, y=6, location="the_bar")
-        self.set_hostility("hostile_circle", "player", -1)
+        self._entity(tag="friendlycircle", sprite="circle", x=6, y=6, location="the_bar")
+        self.set_hostility("friendlycircle", "player", 1)
+        self._entity(tag="hostilecircle", sprite="circle", x=2, y=6, location="the_bar")
+        self.set_hostility("hostilecircle", "player", -1)
         self._zone(name="The Bar", tag="the_bar", contains=["player"])
 
         for x in range(11):
             for y in range(11):
                 self.zones[0]["map"].append([[x, y], ["wood"]])
 
+    def switch_to_main_scene(self):
+        self.current_scene = self.main_scene
+        self.buttons = [
+            {
+                "pos": [12, 9], 
+                "spr": "diamond_dark", 
+                "spr_hl": "diamond", 
+                "on_click": lambda: self.move_player("u")
+            }, 
+            {
+                "pos": [11, 10], 
+                "spr": "diamond_dark", 
+                "spr_hl": "diamond",
+                "on_click": lambda: self.move_player("l")
+            },
+            {
+                "pos": [12, 10], 
+                "spr": "diamond_dark", 
+                "spr_hl": "diamond",
+                "on_click": lambda: self.move_player("d")
+            },
+            {
+                "pos": [13, 10], 
+                "spr": "diamond_dark", 
+                "spr_hl": "diamond",
+                "on_click": lambda: self.move_player("r")
+            },
+        ]
+
+    def close_scene(self):
+        self.current_scene = None
+        self.buttons = []
+
     def __init__(self):
         # Variable for the current "scene", which handles the current screen rendering
-        self.current_scene = self.main_scene
+        self.current_scene = None
+        self.switch_to_main_scene()
+
         self.selected_console = False
         self.font_file = "font/term.ttf"
-        self.bitmap_font = pygame.image.load('img/system/font.bmp')
+        self.bitmap_font = pygame.image.load(f'{app_path}img/system/font.bmp')
         self.cfg = {}
+        #self.buttons=[]
         self.sprites = {
-            "player": pygame.image.load("img/char/hero.png"),
-            "circle": pygame.image.load("img/char/save.png"),
-            "wood": pygame.image.load("img/tiles/wood.png"),
+            "player": pygame.image.load(f"{app_path}img/char/hero.png"),
+            "circle": pygame.image.load(f"{app_path}img/char/save.png"),
+            "wood": pygame.image.load(f"{app_path}img/tiles/wood.png"),
+            "diamond": pygame.image.load(f"{app_path}img/system/diamond.png"),
+            "diamond_dark": pygame.image.load(f"{app_path}img/system/diamond_dark.png"),
         }
 
         self.tile_size = 32
@@ -260,6 +338,22 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
 
     def refresh_text_input(self):
         self.text_input_ln = "".join(self.text_buffer)
+
+    def handle_mouse_down(self, event):
+        print(event)
+        if self.current_scene == self.main_scene:
+            if event.button == 1:
+                pos = self.screen_to_tile(event.pos)
+                print("correct scene")
+                for button in self.buttons:
+                    xy = button["pos"]
+
+
+                    if pos == xy:
+                        print("clicked on", button)
+                        if button.get("on_click", None):
+                            button["on_click"]()
+
 
     def handle_key_down(self, event):
         #print("\n\n", event.unicode, event.key, event)
@@ -336,6 +430,8 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
                 if event.type == pygame.KEYDOWN:
                     self.handle_key_down(event)
 
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    self.handle_mouse_down(event)
             
             
             self.current_scene()

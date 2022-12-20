@@ -1,21 +1,30 @@
 
 class JECommand:
     def parse_command(self, ln):
-        print(f"Recv {ln}") 
-
         cmd = ln.split(" ")[0]
         args = " ".join(ln.split(" ")[1:])
-
-        print(cmd)
-        print(args)
 
         match cmd:
             case "quit":
                 exit()
             
+            case "say":
+                player = self.get_entity(self.player)
+                self.log(f"{player['tag']} says: {args}")
+
+            case "get":
+                a = args.split(" ")
+
+                if len(a) != 2:
+                    return self.log("Invalid cmd length")
+
+                ent = self.get_entity(a[0])
+                val = ent[a[1]]
+                self.log(f"{ent['tag']}.{a[1]} = {val} ({type(val)})")
+
             case "set":
                 a = args.split(" ")
-                print(f"{a}")
+
                 if len(a) != 3:
                     return self.log("Invalid cmd length")
 
@@ -27,6 +36,7 @@ class JECommand:
                 ent[a[1]] = val
 
                 self.log(f"{ent['tag']}.{a[1]} = {val} ({type(val)})")
+
             case "bg":
                 a = args.split(" ")
                 if len(a) == 3:
