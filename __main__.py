@@ -7,6 +7,8 @@ import objects
 
 class JEScreens:
     def main_scene(self):
+        player = self.get_entity(self.player)
+
         # Background colour
         self.screen.fill(self.bg_colour)
         self.shift_bg()
@@ -27,7 +29,7 @@ class JEScreens:
             pygame.draw.rect(self.screen,(255,255,255), (0, height, width, size), 3)
         text_input_size = 25
         ln = self.text_input_ln
-        self.draw_text(5, self.cfg["winsize"][1]-text_input_size, f"> {ln}", size=text_input_size)
+        self.write_text(5, self.cfg["winsize"][1]-text_input_size, f"> {ln}", size=text_input_size)
 
         limit = 5
         current = 0
@@ -45,17 +47,21 @@ class JEScreens:
                 colour = (255, 255, 255, 255)
 
             #print(msg, colour)
-            self.draw_text(5, loc, f"* {msg}", size=log_size, colour=colour)
+            sym = "*"
+            if msg.startswith("$ "): 
+                sym = "$"
+                msg = msg[2:]
+            self.write_text(5, loc, f"{sym} {msg}", size=log_size, colour=colour)
             loc -= log_size
             current += 1
             if current >= limit:
                 break
 
         
-        self.write_bmp(0, height, "Health:")
-
+        #self.write_bmp(0, height+100, "Health: ")
+        text_col = 45
         # field display
-        player = self.get_entity(self.player)
+        
         #print("player", player)
         if player == None: 
             print("ERROR: PLAYER NOT FOUND")
@@ -70,12 +76,28 @@ class JEScreens:
                     for spr in tiles:
                         self.draw_arbitrary(xy, spr)
 
-                self.draw_entity(player)
+                num_ents = 0
+                self.write_bmp(text_col, 20+num_ents, f"Entities in this zone:")
+                #self.draw_entity(player)
+                #print([ent['tag'] for ent in self.entities])
                 for entity in self.entities:
                     if not entity["hidden"] and entity["sprite"] and entity["location"] == cur_loc["tag"]:
                         self.draw_entity(entity)
+
+                        num_ents += 1
+                        l = f"{entity['x']}x{entity['y']}"
+                        h = f"Hostility: {self.get_hostility(entity, player)}"
+                        self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['tag']} {h} ({l})")
+
         # Border around the field
         pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 3)
+
+        # Get health and energy values as percentage
+        hp = 100*(player['health']/player['health_max'])
+        ep = 100*(player['energy']/player['energy_max'])
+        self.write_bmp(text_col, 9, f"Health: {hp}% ({player['health']}/{player['health_max']})")
+        self.write_bmp(text_col, 10, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
+        
 
 class Main(objects.JEState, JEScreens, objects.JECommand):
     def draw_arbitrary(self, xy, spr):
@@ -174,10 +196,12 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         
         self.player = "player"
         
-        self.entities.append(self._entity(tag="player", sprite="player", x=2, y=2, location="the_bar"))
-        self.entities.append(self._entity(tag="savepoint", sprite="circle", x=6, y=6, location="the_bar"))
-
-        self.zones.append(self._zone(name="The Bar", tag="the_bar", contains=["player"]))
+        self._entity(tag="player", sprite="player", x=2, y=2, location="the_bar", alliance="player")
+        self._entity(tag="friendly_circle", sprite="circle", x=6, y=6, location="the_bar")
+        self.set_hostility("friendly_circle", "player", 1)
+        self._entity(tag="hostile_circle", sprite="circle", x=6, y=6, location="the_bar")
+        self.set_hostility("hostile_circle", "player", -1)
+        self._zone(name="The Bar", tag="the_bar", contains=["player"])
 
         for x in range(11):
             for y in range(11):
@@ -230,6 +254,9 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         self.text_buffer = []
         self.text_input_ln = ""
         self.msg_history = []
+    
+    def log(self, txt):
+        self.msg_history.append(txt)
 
     def refresh_text_input(self):
         self.text_input_ln = "".join(self.text_buffer)
@@ -243,10 +270,13 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
             if self.selected_console:
                 if event.key == 13:
                     current_cmd = self.text_input_ln
-                    self.text_buffer.clear()
-                    self.refresh_text_input()
-                    self.msg_history.append(current_cmd)
-                    self.parse_command(current_cmd)
+                    if current_cmd != "":
+                        self.text_buffer.clear()
+                        self.refresh_text_input()
+                        self.msg_history.append("$ "+current_cmd)
+                        self.parse_command(current_cmd)
+                        if self.cfg.get("autoclose_prompt", False):
+                            self.selected_console = False
 
                 if(event.unicode):
                     if event.key != 13 and event.key != 9 and event.key != 8:

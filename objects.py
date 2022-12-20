@@ -12,15 +12,30 @@ class JECommand:
         match cmd:
             case "quit":
                 exit()
+            
+            case "set":
+                a = args.split(" ")
+                print(f"{a}")
+                if len(a) != 3:
+                    return self.log("Invalid cmd length")
 
+                ent = self.get_entity(a[0])
+                val = a[2]
+                if type(val) == str and val.isdigit(): val = int(val)
+                if type(val) == str and val.lower() == "true": val = True
+                if type(val) == str and val.lower() == "false": val = False
+                ent[a[1]] = val
+
+                self.log(f"{ent['tag']}.{a[1]} = {val} ({type(val)})")
             case "bg":
                 a = args.split(" ")
                 if len(a) == 3:
                     print("bg [", a, "]")
                     a = [int(element) for element in a]
                     self.set_bg(a)
+                    self.log("bg changed.")
                 else:
-                    print("Invalid")
+                    self.log("Invalid colour code.")
 class JEState:
     def get_zone(self, tag):
         if type(tag) == dict: return tag
@@ -45,11 +60,36 @@ class JEState:
             "sprite": None,
             "direction": "d",
             "solid": True,
-            "hidden": False
+            "hidden": False,
+            "health": 100,
+            "health_max": 100,
+            "invincible": False,
+            "energy": 100,
+            "energy_max": 100,
+            "alliance": "generic",
+            "alliances": {
+                "generic": 0
+            }
         }
         o.update(**args)
         self.entities.append(o)
         return o
+
+    def set_hostility(self, ent, alliance, value):
+        ent = self.get_entity(ent)
+        ent["alliances"][alliance]= value
+
+    def get_hostility(self, e1, e2) -> int:
+        e1a = e1["alliances"]
+        #e2a = e2["alliances"]
+
+        return e1a.get(e2['alliance'], 0)
+
+    def is_hostile(self, e1, e2):
+        return self.get_hostility(e1, e2) == -1
+
+    def is_friendly(self, e1, e2):
+        return self.get_hostility(e1, e2) == 1
 
     def _zone(self, **args):
         o = {
