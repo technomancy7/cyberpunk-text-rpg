@@ -82,7 +82,7 @@ class JEScreens:
                         self.draw_arbitrary(xy, spr)
 
                 num_ents = 0
-                self.write_bmp(text_col, 20+num_ents, f"Entities in this zone:")
+                self.write_bmp(text_col, 20, f"Entities in this zone:")
                 #self.draw_entity(player)
                 #print([ent['tag'] for ent in self.entities])
                 for entity in self.entities:
@@ -284,12 +284,14 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         # Variable for the current "scene", which handles the current screen rendering
         self.current_scene = None
         self.switch_to_main_scene()
-
+        self.cfg = {}
         self.selected_console = False
+        
+        # fonts
         self.font_file = "font/term.ttf"
         self.bitmap_font = pygame.image.load(f'{app_path}img/system/font.bmp')
-        self.cfg = {}
-        #self.buttons=[]
+        
+        # sprite index
         self.sprites = {
             "player": pygame.image.load(f"{app_path}img/char/hero.png"),
             "circle": pygame.image.load(f"{app_path}img/char/save.png"),
@@ -395,22 +397,44 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
                     self.move_player("r")
 
     def move_entity(self, e, d):
-        e["direction"] = d
-        if d == "u":
-            if e["y"] > 0:
-                e["y"] -= 1
+        #@todo finish this
+        #@todo once implemented, add a switch to use tank controls
+        # forward, backward, strafe right, straight left
+        # moves in directions relative to direction
+        # does not rotate
+        if d in ["fw", "bk", "sr", "sl"]:
+            pass
 
-        if d == "d":
-            if e["y"] < 10:
-                e["y"] += 1
+        # rotate right, rotate left
+        if d in ["rr", "rl"]:
+            pass
 
-        if d == "r":
-            if e["x"] < 10:
-                e["x"] += 1
+        # face up, face down, face left, face right
+        # turns in direction
+        # does not move
+        if d in ["fu", "fd", "fl", "fr"]:
+            pass
 
-        if d == "l":
-            if e["x"] > 0:
-                e["x"] -= 1
+        # up, down, left, right
+        # move in directions relative to screen
+        # rotates to direction
+        if d in ["u", "d", "l", "r"]:
+            e["direction"] = d
+            if d == "u":
+                if e["y"] > 0:
+                    e["y"] -= 1
+
+            if d == "d":
+                if e["y"] < 10:
+                    e["y"] += 1
+
+            if d == "r":
+                if e["x"] < 10:
+                    e["x"] += 1
+
+            if d == "l":
+                if e["x"] > 0:
+                    e["x"] -= 1
 
     def move_player(self, d):
         player = self.get_entity(self.player)
