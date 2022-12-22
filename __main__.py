@@ -3,130 +3,11 @@
 # import the pygame module, so you can use it
 import pygame
 import json
-import objects
+import state, screens, commands
 import os
 import sys
 
-print(os.getcwd())
-app_path = os.path.dirname(os.path.realpath(__file__))+"/"
-print(app_path)
-class JEScreens:
-    def main_scene(self):
-        player = self.get_entity(self.player)
-
-        # Background colour
-        self.screen.fill(self.bg_colour)
-        self.shift_bg()
-        
-        #self.draw_text(20, 30, "Field/tile display")
-        #self.draw_text(400, 30, "Stats/info/controls")
-
-        #self.write(3, 9, "Test BitMap font sentence")
-        #self.write(3, 10, "ALLCAPS TEST 0123456789")
-
-        # text log display
-        size = 128 # Size of the text log box
-        height = self.cfg["winsize"][1]-size
-        width = self.cfg["winsize"][0]
-        if self.selected_console:
-            pygame.draw.rect(self.screen,(255,0,0), (0, height, width, size), 3)
-        else:
-            pygame.draw.rect(self.screen,(255,255,255), (0, height, width, size), 3)
-        text_input_size = 25
-        ln = self.text_input_ln
-        self.write_text(5, self.cfg["winsize"][1]-text_input_size, f"> {ln}", size=text_input_size)
-
-        limit = 5
-        current = 0
-        log_size = text_input_size-5
-        loc = self.cfg["winsize"][1]-text_input_size-log_size
-        for msg in reversed(self.msg_history):
-            colour = (255, 255, 255)
-            if current == limit-3:
-                colour = (255, 255, 255, 5) #(255, 255, 255, 150)
-
-            if current == limit-2:
-                colour = (255, 255, 255, 200)
-
-            if current == limit:
-                colour = (255, 255, 255, 255)
-
-            sym = "*"
-            if msg.startswith("$ "): 
-                sym = "$"
-                msg = msg[2:]
-            self.write_text(5, loc, f"{sym} {msg}", size=log_size, colour=colour)
-            loc -= log_size
-            current += 1
-            if current >= limit:
-                break
-
-        
-        
-        #self.write_bmp(0, height+100, "Health: ")
-        text_col = 45
-        # field display
-        
-        #print("player", player)
-        if player == None: 
-            print("ERROR: PLAYER NOT FOUND")
-        else:
-            cur_loc = self.get_zone(player["location"])
-            if cur_loc == None:
-                print("ERROR: PLAYER NOT IN VALID ZONE")
-            else:
-                for tile in cur_loc["map"]:
-                    xy = tile[0]
-                    tiles = tile[1]
-                    for spr in tiles:
-                        self.draw_arbitrary(xy, spr)
-
-                num_ents = 0
-                self.write_bmp(text_col, 20, f"Entities in this zone:")
-                #self.draw_entity(player)
-                #print([ent['tag'] for ent in self.entities])
-                for entity in self.entities:
-                    if not entity["hidden"] and entity["sprite"] and entity["location"] == cur_loc["tag"]:
-                        self.draw_entity(entity)
-
-                        num_ents += 1
-                        l = f"{entity['x']}x{entity['y']}"
-                        h = f"Hostility: {self.get_hostility(entity, player)}"
-                        self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['tag']} {h} ({l})")
-
-        # Border around the field
-        pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 3)
-
-        # Get health and energy values as percentage
-        hp = 100*(player['health']/player['health_max'])
-        ep = 100*(player['energy']/player['energy_max'])
-        self.write_bmp(text_col, 9, f"Health: {hp}% ({player['health']}/{player['health_max']})")
-        self.write_bmp(text_col, 10, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
-        
-        cursor = self.screen_to_tile(pygame.mouse.get_pos())
-        #print(pygame.mouse.get_pressed())
-        
-
-        for button in self.buttons:
-            xy = button["pos"]
-            img = button["spr"]
-            img_highlight = button["spr_hl"]
-
-            if cursor == xy:
-                self.draw_arbitrary(xy, img_highlight)
-            else:
-                self.draw_arbitrary(xy, img)
-        """
-        self.draw_arbitrary([11, 10], "diamond_dark")
-        self.draw_arbitrary([12, 10], "diamond_dark")
-        self.draw_arbitrary([13, 10], "diamond_dark")
-
-        up_arrow = [12, 9]
-        self.draw_arbitrary(up_arrow, "diamond_dark")
-
-        """
-
-class Main(objects.JEState, JEScreens, objects.JECommand):
+class Main(state.JEState, screens.JEScreens, commands.JECommand):
     def screen_to_tile(self, xy):
         real_x = int(xy[0] / self.tile_size)
         real_y = int(xy[1] / self.tile_size)
@@ -181,6 +62,7 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
 
     def can_input(self) -> bool:
         if self.current_scene == self.main_scene: return True
+        if self.current_scene == self.fullscreen_terminal_scene: return True
         return False
 
     def write_text(self, x, y, text, *, fontfile = "", sysfont = "", size = 30, colour=(255, 255, 255)):
@@ -227,25 +109,44 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         if self.bg_colour[2] > self._proxy_bg_colour[2]:
             self.bg_colour[2] -= self.bg_shift_speed
 
+    @property
+    def player(self):
+        return self.variables.get("focus", None)
+
+    @player.setter
+    def player(self, new_player):
+        self.variables["focus"] = new_player
+
     def build_world(self):
         # Build the default world
-        # @todo saving/loading state
+
+        # Refresh world state
         self.variables = {}
         self.entities = []
         self.zones = []
-        
+
+        # SETUP PLAYER
         self.player = "player"
-        
         self._entity(tag="player", sprite="player", x=2, y=2, location="the_bar", alliance="player")
-        self._entity(tag="friendlycircle", sprite="circle", x=6, y=6, location="the_bar")
+
+        # ZONE 1: THE BAR
+        self._entity(tag="friendlycircle", sprite="circle", x=6, y=6, location="the_bar", name="good circle")
         self.set_hostility("friendlycircle", "player", 1)
-        self._entity(tag="hostilecircle", sprite="circle", x=2, y=6, location="the_bar")
+
+        self._entity(tag="hostilecircle", sprite="circle", x=2, y=6, location="the_bar", name="bad circle")
         self.set_hostility("hostilecircle", "player", -1)
+
         self._zone(name="The Bar", tag="the_bar", contains=["player"])
 
         for x in range(11):
             for y in range(11):
                 self.zones[0]["map"].append([[x, y], ["wood"]])
+
+
+    def switch_to_fst(self):
+        self.buttons = []
+        self.current_scene = self.fullscreen_terminal_scene
+
 
     def switch_to_main_scene(self):
         self.current_scene = self.main_scene
@@ -276,11 +177,15 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
             },
         ]
 
-    def close_scene(self):
-        self.current_scene = None
-        self.buttons = []
-
     def __init__(self):
+        # initialize the pygame module
+        pygame.init()
+        pygame.font.init()
+
+        # Location the current script file is located in
+        # Acts as home for any files related to this project
+        self.app_path = os.path.dirname(os.path.realpath(__file__))+"/"
+
         # Variable for the current "scene", which handles the current screen rendering
         self.current_scene = None
         self.switch_to_main_scene()
@@ -289,30 +194,29 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         
         # fonts
         self.font_file = "font/term.ttf"
-        self.bitmap_font = pygame.image.load(f'{app_path}img/system/font.bmp')
+        self.bitmap_font = pygame.image.load(f'{self.app_path}img/system/font.bmp')
         
         # sprite index
         self.sprites = {
-            "player": pygame.image.load(f"{app_path}img/char/hero.png"),
-            "circle": pygame.image.load(f"{app_path}img/char/save.png"),
-            "wood": pygame.image.load(f"{app_path}img/tiles/wood.png"),
-            "diamond": pygame.image.load(f"{app_path}img/system/diamond.png"),
-            "diamond_dark": pygame.image.load(f"{app_path}img/system/diamond_dark.png"),
+            "player": pygame.image.load(f"{self.app_path}img/char/hero.png"),
+            "circle": pygame.image.load(f"{self.app_path}img/char/save.png"),
+            "wood": pygame.image.load(f"{self.app_path}img/tiles/wood.png"),
+            "diamond": pygame.image.load(f"{self.app_path}img/system/diamond.png"),
+            "diamond_dark": pygame.image.load(f"{self.app_path}img/system/diamond_dark.png"),
         }
 
+        # consts
         self.tile_size = 32
+        self.field_size = 10
         self.bg_colour = [0, 0, 0]
         self._proxy_bg_colour = [0, 0, 0]
         self.bg_shift_speed = 0.2
 
+        # load system config
         with open("config.json", "r+") as f:
             self.cfg = json.load(f)
-            
-        # initialize the pygame module
-        pygame.init()
-        pygame.font.init()
         
-        # load and set the logo
+        # load and set the logo and set title name
         #logo = pygame.image.load("logo32x32.png")
         #pygame.display.set_icon(logo)
         pygame.display.set_caption("WIP")
@@ -329,41 +233,56 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         self.entities = []
         self.zones = []
 
+        # build the default world
         self.build_world()
-        # text
+
+        # containers for the text input system
         self.text_buffer = []
         self.text_input_ln = ""
         self.msg_history = []
     
     def log(self, txt):
+        # Send a message to the in-game terminal
         self.msg_history.append(txt)
 
     def refresh_text_input(self):
+        # Refreshes the string of text used for the terminal input
         self.text_input_ln = "".join(self.text_buffer)
 
     def handle_mouse_down(self, event):
-        print(event)
-        if self.current_scene == self.main_scene:
-            if event.button == 1:
+        # user clicked event
+        if self.current_scene == self.main_scene: # handling main scene
+            if event.button == 1: # left mouse click
+                # get mouse position and convert it to "tile" position
                 pos = self.screen_to_tile(event.pos)
-                print("correct scene")
+
+                # loop over our current list of buttons
                 for button in self.buttons:
+                    # get this buttons tile position
                     xy = button["pos"]
 
-
+                    # mouse cursor is in same tile as the button
                     if pos == xy:
-                        print("clicked on", button)
-                        if button.get("on_click", None):
+                        if button.get("on_click", None): # send to the buttons on_click event if it exists
                             button["on_click"]()
 
 
     def handle_key_down(self, event):
-        #print("\n\n", event.unicode, event.key, event)
-        if self.can_input():
-            if event.key == 9:
+        # keyboard input
+        if self.can_input(): # if user can press buttons right now
+            if self.current_scene == self.main_scene and event.scancode == 58:
+                self.switch_to_fst()
+                return
+            
+            
+            if self.current_scene == self.fullscreen_terminal_scene and event.scancode == 58:
+                self.switch_to_main_scene()
+                return
+
+            if self.current_scene == self.main_scene and event.key == 9:
                 self.selected_console = not self.selected_console
 
-            if self.selected_console:
+            if self.selected_console or self.current_scene == self.fullscreen_terminal_scene:
                 if event.key == 13:
                     current_cmd = self.text_input_ln
                     if current_cmd != "":
@@ -421,20 +340,50 @@ class Main(objects.JEState, JEScreens, objects.JECommand):
         if d in ["u", "d", "l", "r"]:
             e["direction"] = d
             if d == "u":
-                if e["y"] > 0:
-                    e["y"] -= 1
+                collisions = self.collisions_at(e["x"], e["y"]-1)
+                if len(collisions) > 0:
+                    self.log(f"! You bumped in to {collisions[0]['name']}")
+                else:
+                    if e["y"] > 0:
+                        e["y"] -= 1
 
             if d == "d":
-                if e["y"] < 10:
-                    e["y"] += 1
+                collisions = self.collisions_at(e["x"], e["y"]+1)
+                if len(collisions) > 0:
+                    self.log(f"! You bumped in to {collisions[0]['name']}")
+                else:
+                    if e["y"] < self.field_size:
+                        e["y"] += 1
 
             if d == "r":
-                if e["x"] < 10:
-                    e["x"] += 1
+                collisions = self.collisions_at(e["x"]+1, e["y"])
+                if len(collisions) > 0:
+                    self.log(f"! You bumped in to {collisions[0]['name']}")
+                else:
+                    if e["x"] < self.field_size:
+                        e["x"] += 1
 
             if d == "l":
-                if e["x"] > 0:
-                    e["x"] -= 1
+                collisions = self.collisions_at(e["x"]-1, e["y"])
+                if len(collisions) > 0:
+                    self.log(f"! You bumped in to {collisions[0]['name']}")
+                else:
+                    if e["x"] > 0:
+                        e["x"] -= 1
+
+    def collisions_at(self, x, y):
+        out = []
+        for ent in self.entities:
+            if ent["x"] == x and ent["y"] == y and ent["hidden"] == False and ent["solid"] == True:
+                out.append(ent)
+        return out
+
+    def find_entities_at(self, x, y):
+        out = []
+        for ent in self.entities:
+            if ent["x"] == x and ent["y"] == y:
+                out.append(ent)
+        return out
 
     def move_player(self, d):
         player = self.get_entity(self.player)

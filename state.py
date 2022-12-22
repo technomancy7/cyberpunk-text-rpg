@@ -1,52 +1,36 @@
+import json, os
 
-class JECommand:
-    def parse_command(self, ln):
-        cmd = ln.split(" ")[0]
-        args = " ".join(ln.split(" ")[1:])
-
-        match cmd:
-            case "quit":
-                exit()
-            
-            case "say":
-                player = self.get_entity(self.player)
-                self.log(f"{player['tag']} says: {args}")
-
-            case "get":
-                a = args.split(" ")
-
-                if len(a) != 2:
-                    return self.log("Invalid cmd length")
-
-                ent = self.get_entity(a[0])
-                val = ent[a[1]]
-                self.log(f"{ent['tag']}.{a[1]} = {val} ({type(val)})")
-
-            case "set":
-                a = args.split(" ")
-
-                if len(a) != 3:
-                    return self.log("Invalid cmd length")
-
-                ent = self.get_entity(a[0])
-                val = a[2]
-                if type(val) == str and val.isdigit(): val = int(val)
-                if type(val) == str and val.lower() == "true": val = True
-                if type(val) == str and val.lower() == "false": val = False
-                ent[a[1]] = val
-
-                self.log(f"{ent['tag']}.{a[1]} = {val} ({type(val)})")
-
-            case "bg":
-                a = args.split(" ")
-                if len(a) == 3:
-                    print("bg [", a, "]")
-                    a = [int(element) for element in a]
-                    self.set_bg(a)
-                    self.log("bg changed.")
-                else:
-                    self.log("Invalid colour code.")
 class JEState:
+    def save_state(self, name = "save"):
+        data = self.export_state()
+        with open(self.app_path+"states/"+name+".json", "w+") as f:   
+            json.dump(data, f, indent=4)
+            self.log(f"! State saved to {name}.json")
+
+    def export_state(self):
+        output = {
+            "variables": self.variables,
+            "zones": self.zones,
+            "entities": self.entities
+        }
+        return output
+
+    def import_state(self, name = "save"):
+        if not os.path.exists(self.app_path+"states/"+name+".json"):
+            self.log(f"! Save file not found {name}")
+            return
+
+        with open(self.app_path+"states/"+name+".json", "r") as f:
+            return json.load(f)
+
+    def load_state(self, name = "save"):
+        data = self.import_state(name)
+        if data:
+            self.entities = data.get("entities", [])
+            self.zones = data.get("zones", [])
+            self.variables = data.get("variables", {})
+            self.log(f"! State loaded from {name}.json")
+
     def get_zone(self, tag):
         if type(tag) == dict: return tag
         for zone in self.zones:
