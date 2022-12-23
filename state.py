@@ -65,7 +65,7 @@ class JEState:
                 "generic": 0
             },
             "barks": {},
-            "events": {}
+            "events": {},
         }
         o.update(**args)
         self.entities.append(o)
