@@ -5,7 +5,7 @@ import pygame
 import json
 import state, screens, commands
 import os
-import sys
+import sys, random
 
 class Main(state.JEState, screens.JEScreens, commands.JECommand):
     def screen_to_tile(self, xy):
@@ -130,8 +130,9 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
         self._entity(tag="player", sprite="player", x=2, y=2, location="the_bar", alliance="player")
 
         # ZONE 1: THE BAR
-        self._entity(tag="friendlycircle", sprite="circle", x=6, y=6, location="the_bar", name="good circle")
-        self.set_hostility("friendlycircle", "player", 1)
+        f = self._entity(tag="goodcircle", sprite="circle", x=6, y=6, location="the_bar", name="good circle")
+        self.set_hostility("goodcircle", "player", 1)
+        f["barks"]["bump"] = ["Hey!", "Watch it!"]
 
         self._entity(tag="hostilecircle", sprite="circle", x=2, y=6, location="the_bar", name="bad circle")
         self.set_hostility("hostilecircle", "player", -1)
@@ -315,6 +316,16 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
                 if event.unicode == "d" or event.scancode == 79:
                     self.move_player("r")
 
+    def collided(self, mover, target, direction = "u"):
+        return self.bark(target, "bump")
+
+    def bark(self, target, group = "ambient"):
+        target = self.get_entity(target)
+        barks = target.get("barks", {}).get(group, [])
+        if len(barks) > 0:
+            self.log(f"{target['name']}: {random.choice(barks)}")
+            return True
+
     def move_entity(self, e, d):
         #@todo finish this
         #@todo once implemented, add a switch to use tank controls
@@ -342,7 +353,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
             if d == "u":
                 collisions = self.collisions_at(e["x"], e["y"]-1)
                 if len(collisions) > 0:
-                    self.log(f"! You bumped in to {collisions[0]['name']}")
+                    if not self.collided(e, collisions[0]): 
+                        self.log(f"! You bumped in to {collisions[0]['name']}")
                 else:
                     if e["y"] > 0:
                         e["y"] -= 1
@@ -350,7 +362,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
             if d == "d":
                 collisions = self.collisions_at(e["x"], e["y"]+1)
                 if len(collisions) > 0:
-                    self.log(f"! You bumped in to {collisions[0]['name']}")
+                    if not self.collided(e, collisions[0]): 
+                        self.log(f"! You bumped in to {collisions[0]['name']}")
                 else:
                     if e["y"] < self.field_size:
                         e["y"] += 1
@@ -358,7 +371,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
             if d == "r":
                 collisions = self.collisions_at(e["x"]+1, e["y"])
                 if len(collisions) > 0:
-                    self.log(f"! You bumped in to {collisions[0]['name']}")
+                    if not self.collided(e, collisions[0]): 
+                        self.log(f"! You bumped in to {collisions[0]['name']}")
                 else:
                     if e["x"] < self.field_size:
                         e["x"] += 1
@@ -366,7 +380,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
             if d == "l":
                 collisions = self.collisions_at(e["x"]-1, e["y"])
                 if len(collisions) > 0:
-                    self.log(f"! You bumped in to {collisions[0]['name']}")
+                    if not self.collided(e, collisions[0]): 
+                        self.log(f"! You bumped in to {collisions[0]['name']}")
                 else:
                     if e["x"] > 0:
                         e["x"] -= 1

@@ -63,7 +63,9 @@ class JEState:
             "alliance": "generic",
             "alliances": {
                 "generic": 0
-            }
+            },
+            "barks": {},
+            "events": {}
         }
         o.update(**args)
         self.entities.append(o)
