@@ -142,17 +142,13 @@ class JEScreens:
             xy = button["pos"]
             img = button["spr"]
             img_highlight = button["spr_hl"]
-
+            #@todo add option for real screen xy boundary
             if cursor == xy:
                 self.draw_arbitrary(xy, img_highlight)
             else:
                 self.draw_arbitrary(xy, img)
-        """
-        self.draw_arbitrary([11, 10], "diamond_dark")
-        self.draw_arbitrary([12, 10], "diamond_dark")
-        self.draw_arbitrary([13, 10], "diamond_dark")
 
-        up_arrow = [12, 9]
-        self.draw_arbitrary(up_arrow, "diamond_dark")
+        #if len(self.dialog_stack) > 0:
+        dialog_box = pygame.draw.rect(self.screen, (125,255,255), (0, 200, 200, 200), 3)
+        
 
-        """
