@@ -303,6 +303,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
                 if self.proceed_dialog():
                     return
 
+                #@todo add a version that checks boundaries of real screen coordinates
                 # get mouse position and convert it to "tile" position
                 pos = self.screen_to_tile(event.pos)
 
