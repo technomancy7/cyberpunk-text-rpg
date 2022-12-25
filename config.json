@@ -1,4 +1,4 @@
 {
     "winsize": [640, 480],
-    "autoclose_prompt": true
+    "autoclose_prompt": false
 }

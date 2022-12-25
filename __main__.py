@@ -3,11 +3,11 @@
 # import the pygame module, so you can use it
 import pygame
 import json
-import state, screens, commands
+import state, screens, commands, world
 import os
 import sys, random
 
-class Main(state.JEState, screens.JEScreens, commands.JECommand):
+class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWorld):
     def screen_to_tile(self, xy):
         real_x = int(xy[0] / self.tile_size)
         real_y = int(xy[1] / self.tile_size)
@@ -20,6 +20,24 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
 
     def draw_button(self, xy, spr, spr_highlight):
         pass
+
+    def draw_arbitrary_precise(self, xy, spr):
+        real_x = xy[0]
+        real_y = xy[1]
+        spr = self.sprites.get(spr, None)
+        if spr == None:
+            print("ERROR: SPRITE FOR ARBITRARY CALL MISSING")
+        else:
+            self.screen.blit(spr, (real_x, real_y))
+
+    def draw_entity_precise(self, entity):
+        real_x = entity["screen_x"]
+        real_y = entity["screen_y"]
+        spr = self.sprites.get(entity["sprite"], None)
+        if spr == None:
+            print("ERROR: SPRITE FOR", entity["tag"], "MISSING")
+        else:
+            self.screen.blit(spr, (real_x, real_y))
 
     def draw_arbitrary(self, xy, spr):
         real_x = xy[0] * self.tile_size
@@ -39,9 +57,9 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
         else:
             self.screen.blit(spr, (real_x, real_y))
 
-    def write_bmp(self, x, y, text):
+    def write_bmp(self, x, y, text, *, precise = False):
         length = range(len(text))
-        
+
         for i in length:
             ch = text[i]
 
@@ -52,7 +70,10 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
             
             # character sheet starts at '!'
             id = ord(ch) - 33
-            self.fbmp(self.bitmap_font, x * 8, y * 8, 8, 8, id)
+            if not precise:
+                self.fbmp(self.bitmap_font, x * 8, y * 8, 8, 8, id)
+            else:
+                self.fbmp(self.bitmap_font, x, y, 8, 8, id)
             x += 1
 
     def fbmp(self, image, x, y, width, height, id):
@@ -117,33 +138,6 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
     def player(self, new_player):
         self.variables["focus"] = new_player
 
-    def build_world(self):
-        # Build the default world
-
-        # Refresh world state
-        self.variables = {}
-        self.entities = []
-        self.zones = []
-
-        # SETUP PLAYER
-        self.player = "player"
-        self._entity(tag="player", sprite="player", x=2, y=2, location="the_bar", alliance="player")
-
-        # ZONE 1: THE BAR
-        f = self._entity(tag="goodcircle", sprite="circle", x=6, y=6, location="the_bar", name="good circle")
-        self.set_hostility("goodcircle", "player", 1)
-        f["barks"]["bump"] = ["Hey!", "Watch it!"]
-
-        self._entity(tag="hostilecircle", sprite="circle", x=2, y=6, location="the_bar", name="bad circle")
-        self.set_hostility("hostilecircle", "player", -1)
-
-        self._zone(name="The Bar", tag="the_bar", contains=["player"])
-
-        for x in range(11):
-            for y in range(11):
-                self.zones[0]["map"].append([[x, y], ["wood"]])
-
-
     def switch_to_fst(self):
         self.buttons = []
         self.current_scene = self.fullscreen_terminal_scene
@@ -207,11 +201,17 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
         }
 
         # consts
+        self.spr_move_speed = 0.5
         self.tile_size = 32
         self.field_size = 10
         self.bg_colour = [0, 0, 0]
         self._proxy_bg_colour = [0, 0, 0]
         self.bg_shift_speed = 0.2
+
+        self.ttext1 = [255, 255, 255]
+        self.ttext2 = [205, 205, 205]
+        self.ttext3 = [175, 175, 175]
+        self.ttext4 = [125, 125, 125]
 
         # load system config
         with open("config.json", "r+") as f:
@@ -234,6 +234,13 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
         self.entities = []
         self.zones = []
 
+        # Global deltatime
+        self.dt = 0.0
+        self.raw_ticks = 0
+        self.seconds = 0
+        self.clock = pygame.time.Clock()
+        self.ticks = {}
+
         # build the default world
         self.build_world()
 
@@ -241,10 +248,30 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
         self.text_buffer = []
         self.text_input_ln = ""
         self.msg_history = []
-    
+        self.msg_history_proxy = []
+        self.log_size_limit = 45
+
     def log(self, txt):
+        iters = 0
         # Send a message to the in-game terminal
-        self.msg_history.append(txt)
+        print(len(txt), "<", self.log_size_limit, "=", len(txt) <= self.log_size_limit)
+        if len(txt) < self.log_size_limit:
+            self.msg_history.append(txt)
+            self.msg_history_proxy.append("")
+        else:
+            out = []
+            while len(txt) >= self.log_size_limit:
+                iters += 1
+                newsplit = " ".join(txt[0:self.log_size_limit].split(" ")[:-1])
+                txt = txt[len(newsplit):]
+                self.msg_history.append(newsplit)
+                self.msg_history_proxy.append("")
+                if iters > 10:
+                    print("EMERGENCY BREAK: Log message too big.")
+                    break
+
+            self.msg_history.append(txt)
+            self.msg_history_proxy.append("")
 
     def refresh_text_input(self):
         # Refreshes the string of text used for the terminal input
@@ -289,7 +316,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
                     if current_cmd != "":
                         self.text_buffer.clear()
                         self.refresh_text_input()
-                        self.msg_history.append("$ "+current_cmd)
+                        self.log("$ "+current_cmd)
                         self.parse_command(current_cmd)
                         if self.cfg.get("autoclose_prompt", False):
                             self.selected_console = False
@@ -405,6 +432,31 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
         if player != None:
             self.move_entity(player, d)
 
+    def global_timer(self):
+        # called every second (roughly)
+        
+        # typewriter effect
+        pass
+
+    def global_tick(self, dt):
+        # add deltatime (delay between last frame in milliseconds) to overall counter
+        self.dt += dt
+        self.raw_ticks += 1
+
+        if self.raw_ticks % 20 == 0:
+            for i, val in enumerate(self.msg_history):
+                if self.msg_history_proxy[i] != val:
+                    self.msg_history_proxy[i] += val[len(self.msg_history_proxy[i])]
+
+        # if it's been a second since the last run...
+        if int(self.dt) != self.seconds:
+            self.seconds = int(self.dt)
+            self.global_timer()
+
+        for k, v in self.ticks.items():
+            v(self.dt, dt)
+
+
     def loop(self):
         # main loop
         while self.running:
@@ -423,7 +475,9 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand):
             
             
             self.current_scene()
-            
+
+            self.global_tick((self.clock.tick()/1000)%60)
+
             # Updates the display
             pygame.display.flip()
 

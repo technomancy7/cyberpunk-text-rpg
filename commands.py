@@ -49,22 +49,31 @@ class JECommand:
                     return self.log("Invalid cmd format.")
 
                 # player.health 1
-
                 target = args.split(".")[0] # player
-                param = args.split(".")[1] # health 1
+                param = ".".join(args.split(".")[1:]) # health 1
                 val = param.split(" ")[0] # health
                 param = " ".join(param.split(" ")[1:]) # 1
 
+                def is_float(s):
+                    try:
+                        float(s)
+                        return True
+                    except:
+                        return False
+
+                       
                 if type(param) == str and param.isdigit(): param = int(param)
+                if type(param) == str and is_float(param): param = float(param) 
                 if type(param) == str and param.lower() == "true": param = True
                 if type(param) == str and param.lower() == "false": param = False
 
-                if target == "world":
+                if target == "world" or target == "self" or target == "$":
                     self.variables[val] = param
                     self.log(f"{target}.{val} = {param} ({type(param)})")
                 else:
                     ent = self.get_entity(target)
-
+                    if ent == None:
+                        return self.log(f"Entity {target} not found.")
                     ent[val] = param
 
                     self.log(f"{target}.{val} = {param} ({type(param)})")

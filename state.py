@@ -45,11 +45,15 @@ class JEState:
     def _entity(self, **args):
         o = {
             "tag": "", 
+            "x": 0,
+            "y": 0,
+            "screen_x": 0,
+            "screen_y": 0,
             "name": "DEFAULT_NAME", 
             "description": "DEFAULT_DESCRIPTION", 
             "contains": [], 
             "location": "",
-            "type": "actor",
+            "type": "entity",
             "events": {},
             "sprite": None,
             "direction": "d",
@@ -70,6 +74,18 @@ class JEState:
         o.update(**args)
         self.entities.append(o)
         return o
+
+    def set_zone(self, ent, zone):
+        ent = self.get_entity(ent)
+        new_zone = self.get_zone(zone)
+
+        if ent["location"] != "":
+            loc = self.get_zone(ent['location'])
+            if loc != None:
+                loc['contains'].remove(ent['tag'])
+        
+        ent['location'] = new_zone['tag']
+        if ent['tag'] not in new_zone['contains']: new_zone["contains"].append(ent['tag'])
 
     def set_hostility(self, ent, alliance, value):
         ent = self.get_entity(ent)

@@ -58,16 +58,17 @@ class JEScreens:
         current = 0
         log_size = text_input_size-5
         loc = self.cfg["winsize"][1]-text_input_size-log_size
-        for msg in reversed(self.msg_history):
-            colour = (255, 255, 255)
+        for msg in reversed(self.msg_history_proxy):
+            colour = self.ttext1
+
             if current == limit-3:
-                colour = (255, 255, 255, 5) #(255, 255, 255, 150)
+                colour = self.ttext2
 
             if current == limit-2:
-                colour = (255, 255, 255, 200)
+                colour = self.ttext3
 
-            if current == limit:
-                colour = (255, 255, 255, 255)
+            if current == limit-1:
+                colour = self.ttext4
 
             sym = "*"
             symbols = ["$", "!", "@", "#", "?"]
@@ -99,17 +100,30 @@ class JEScreens:
 
                 num_ents = 0
                 self.write_bmp(text_col, 20, f"Entities in this zone:")
-                #self.draw_entity(player)
-                #print([ent['tag'] for ent in self.entities])
+
+                # = self.variables.get("sprms", 0.5)#0.5
                 for entity in self.entities:
                     if not entity["hidden"] and entity["sprite"] and entity["location"] == cur_loc["tag"]:
-                        self.draw_entity(entity)
+                        if entity["screen_x"] > entity["x"] * self.tile_size:
+                            entity["screen_x"] -= self.spr_move_speed
+
+                        if entity["screen_x"] < entity["x"] * self.tile_size:
+                            entity["screen_x"] += self.spr_move_speed
+                            
+                        if entity["screen_y"] > entity["y"] * self.tile_size:
+                            entity["screen_y"] -= self.spr_move_speed
+
+                        if entity["screen_y"] < entity["y"] * self.tile_size:
+                            entity["screen_y"] += self.spr_move_speed
+
+                        self.draw_entity_precise(entity)
 
                         num_ents += 1
                         l = f"{entity['x']}x{entity['y']}"
+                        l = f"{entity['x']*self.tile_size}x{entity['y']*self.tile_size} / {entity['screen_x']}x{entity['screen_y']}"
                         #h = f"Hostility: {self.get_hostility(entity, player)}"
-                        h = f"Facing {entity['direction']}"
-                        self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['name']} {h} ({l})")
+                        #h = f"Facing {entity['direction']}"
+                        self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['name']} ({l})")
 
         # Border around the field
         pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 3)
@@ -119,7 +133,7 @@ class JEScreens:
         ep = 100*(player['energy']/player['energy_max'])
         self.write_bmp(text_col, 9, f"Health: {hp}% ({player['health']}/{player['health_max']})")
         self.write_bmp(text_col, 10, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
-        
+        self.write_bmp(text_col, 11, f"Move speed: {self.variables.get('sprms', 0.5)}")
         cursor = self.screen_to_tile(pygame.mouse.get_pos())
         #print(pygame.mouse.get_pressed())
         
