@@ -148,7 +148,44 @@ class JEScreens:
             else:
                 self.draw_arbitrary(xy, img)
 
-        #if len(self.dialog_stack) > 0:
-        dialog_box = pygame.draw.rect(self.screen, (125,255,255), (0, 200, 200, 200), 3)
-        
+        if len(self.dialog_stack) > 0:
+            def spl(s, *, lim=40):
+                out = []
+                iters = 0
+                while len(s) >= lim:
+                    iters += 1
+                    newsplit = " ".join(s[0:lim].split(" ")[:-1])
+                    s = s[len(newsplit):]
+                    out.append(newsplit.strip())
+
+                    if iters > 6:
+                        print("EMERGENCY BREAK: Dialog message too big.")
+                        break
+
+                out.append(s.strip())
+                return out
+
+            tsize = 40
+            rect = (40, 200, 550, 200)
+            rect_sender = (45, 175, 205, 40)
+
+
+            pygame.Surface.fill(self.screen, (0,0,0), rect)
+            pygame.draw.rect(self.screen, (255,255,255, 100), rect, 3)
+
+            pygame.Surface.fill(self.screen, (0,0,0), rect_sender)
+            pygame.draw.rect(self.screen, (255,255,255, 100), rect_sender, 3)
+
+            lines = spl(self.dialog_msg_proxy)
+            sender = self.dialog_stack[0][0]
+
+            self.write_text(50, 183, f"{sender}", size=25, colour=(255, 255, 255))
+
+            ind = 225
+            for ln in lines:
+                self.write_text(50, ind, f"{ln}", size=20, colour=(255, 255, 255))
+                ind += 25
+
+            if self.dialog_msg_proxy == self.dialog_stack[0][1]:
+                self.write_text(520, 380, f"[Confirm]", size=10, colour=(255, 255, 255))
 

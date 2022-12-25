@@ -31,3 +31,5 @@ class ElysiumWorld:
         for x in range(11):
             for y in range(11):
                 self.zones[0]["map"].append([[x, y], ["wood"]])
+
+        self.push_dialog("Intro", "This is an intro! This dialog box is for testing purposes. I wonder if it'll even work, who knows really.")

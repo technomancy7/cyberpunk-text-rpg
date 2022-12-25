@@ -241,15 +241,24 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
         self.clock = pygame.time.Clock()
         self.ticks = {}
 
-        # build the default world
-        self.build_world()
-
         # containers for the text input system
         self.text_buffer = []
         self.text_input_ln = ""
         self.msg_history = []
         self.msg_history_proxy = []
         self.log_size_limit = 45
+
+
+        # Dialog box
+        self.dialog_box = None
+        self.dialog_stack = []
+        self.dialog_msg_proxy = ""
+
+        # build the default world
+        self.build_world()
+
+    def push_dialog(self, speaker, message):
+        self.dialog_stack.append([speaker, message])
 
     def log(self, txt):
         iters = 0
@@ -277,10 +286,23 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
         # Refreshes the string of text used for the terminal input
         self.text_input_ln = "".join(self.text_buffer)
 
+    def proceed_dialog(self):
+        if len(self.dialog_stack) > 0:
+            if self.dialog_msg_proxy != self.dialog_stack[0][1]:
+                self.dialog_msg_proxy = self.dialog_stack[0][1]
+            else:
+                self.dialog_stack.remove(self.dialog_stack[0])
+                self.dialog_msg_proxy = ""   
+            return True
+        return False
+
     def handle_mouse_down(self, event):
         # user clicked event
         if self.current_scene == self.main_scene: # handling main scene
             if event.button == 1: # left mouse click
+                if self.proceed_dialog():
+                    return
+
                 # get mouse position and convert it to "tile" position
                 pos = self.screen_to_tile(event.pos)
 
@@ -298,6 +320,11 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
     def handle_key_down(self, event):
         # keyboard input
         if self.can_input(): # if user can press buttons right now
+            if len(self.dialog_stack) > 0:
+                if self.proceed_dialog():
+                    return
+                return
+
             if self.current_scene == self.main_scene and event.scancode == 58:
                 self.switch_to_fst()
                 return
@@ -443,10 +470,15 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
         self.dt += dt
         self.raw_ticks += 1
 
-        if self.raw_ticks % 20 == 0:
+        if self.raw_ticks % 10 == 0:
             for i, val in enumerate(self.msg_history):
                 if self.msg_history_proxy[i] != val:
                     self.msg_history_proxy[i] += val[len(self.msg_history_proxy[i])]
+
+            if len(self.dialog_stack) > 0:
+                msg = self.dialog_stack[0][1]
+                if self.dialog_msg_proxy != msg:
+                    self.dialog_msg_proxy += msg[len(self.dialog_msg_proxy)]
 
         # if it's been a second since the last run...
         if int(self.dt) != self.seconds:

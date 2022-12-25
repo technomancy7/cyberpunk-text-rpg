@@ -24,6 +24,9 @@ class JECommand:
                     self.log("You moved "+step)
                     self.move_player(step)
 
+            case "diag":
+                self.push_dialog("Player", f"{args}")
+
             case "say":
                 player = self.get_entity(self.player)
                 self.log(f"{player['tag']} says: {args}")
