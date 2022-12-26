@@ -417,7 +417,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.dt += dt
         self.raw_ticks += 1
 
-        if self.raw_ticks % 10 == 0:
+        if self.raw_ticks % 2 == 0:
             for i, val in enumerate(self.msg_history):
                 if self.msg_history_proxy[i] != val:
                     self.msg_history_proxy[i] += val[len(self.msg_history_proxy[i])]
