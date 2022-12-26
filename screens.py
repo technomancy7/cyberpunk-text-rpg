@@ -47,12 +47,18 @@ class JEScreens:
         height = self.cfg["winsize"][1]-size
         width = self.cfg["winsize"][0]
         if self.selected_console:
-            pygame.draw.rect(self.screen,(255,0,0), (0, height, width, size), 3)
+            pygame.draw.rect(self.screen,(255,0,0), (0, height, width, size), 1)
         else:
-            pygame.draw.rect(self.screen,(255,255,255), (0, height, width, size), 3)
+            pygame.draw.rect(self.screen,(255,255,255), (0, height, width, size), 1)
         text_input_size = 25
         ln = self.text_input_ln
-        self.write_text(5, self.cfg["winsize"][1]-text_input_size, f"> {ln}", size=text_input_size)
+        if len(ln) > 34:
+            ln = ln[-34:]
+
+        if self.seconds % 2 == 0 and self.selected_console:
+            ln = ln+"_"
+
+        self.write_text(5, self.cfg["winsize"][1]-(text_input_size+3), f"> {ln}", size=text_input_size-2)
 
         limit = 5
         current = 0
@@ -126,7 +132,7 @@ class JEScreens:
                         self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['name']} ({l})")
 
         # Border around the field
-        pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 3)
+        pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 1)
 
         # Get health and energy values as percentage
         hp = 100*(player['health']/player['health_max'])

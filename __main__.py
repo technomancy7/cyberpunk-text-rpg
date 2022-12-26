@@ -1,13 +1,22 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# import the pygame module, so you can use it
-import pygame
 import json
-import state, screens, commands, world
+
+import importlib
 import os
 import sys, random
 
-class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWorld):
+app_path = os.path.dirname(os.path.realpath(__file__))+"/"
+print(app_path)
+sys.path.append(app_path)
+sys.path.append(app_path+"libraries/")
+import pygame
+import state, screens, commands
+
+world_name = "coreworld" #@todo command line argument to swap out world
+world = importlib.import_module("worlds."+world_name)
+
+class Main(state.JEState, screens.JEScreens, commands.JECommand, world.World):
     def screen_to_tile(self, xy):
         real_x = int(xy[0] / self.tile_size)
         real_y = int(xy[1] / self.tile_size)
@@ -94,10 +103,10 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
             myfont = pygame.font.SysFont(sysfont, size)
 
         elif fontfile: # else if specified a font file
-            myfont = pygame.font.Font(fontfile, size)
+            myfont = pygame.font.Font(self.app_path+"font/"+fontfile, size)
 
         else: # else default to internal
-            myfont = pygame.font.Font(self.font_file, size)
+            myfont = pygame.font.Font(self.app_path+"font/"+self.font_file, size)
 
         # apply it to text on a label
         label = myfont.render(text, 1, colour)
@@ -172,7 +181,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
             },
         ]
 
-    def __init__(self):
+    def __init__(self, *, world="coreworld"):
         # initialize the pygame module
         pygame.init()
         pygame.font.init()
@@ -188,7 +197,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
         self.selected_console = False
         
         # fonts
-        self.font_file = "font/term.ttf"
+        self.font_file = "term.ttf"
         self.bitmap_font = pygame.image.load(f'{self.app_path}img/system/font.bmp')
         
         # sprite index
@@ -214,7 +223,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
         self.ttext4 = [125, 125, 125]
 
         # load system config
-        with open("config.json", "r+") as f:
+        with open(f"{self.app_path}config.json", "r+") as f:
             self.cfg = json.load(f)
         
         # load and set the logo and set title name
@@ -223,7 +232,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.ElysiumWo
         pygame.display.set_caption("WIP")
 
         # create a surface on screen
-        self.screen = pygame.display.set_mode(self.cfg["winsize"])
+        self.screen = pygame.display.set_mode(self.cfg["winsize"], pygame.SCALED|pygame.RESIZABLE)
 
         # define a variable to control the main loop
         self.running = True

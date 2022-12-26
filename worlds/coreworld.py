@@ -1,6 +1,7 @@
 
-class ElysiumWorld:
+class World:
     def build_world(self):
+        print("Building coreworld")
         # Build the default world
 
         # Refresh world state
