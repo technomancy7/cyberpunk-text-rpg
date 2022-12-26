@@ -4,36 +4,35 @@ class JECommand:
         args_raw = ln.split(" ")[1:]
         args = " ".join(args_raw)
 
-        match cmd:
-            case "quit":
+        if cmd == "quit":
                 exit()
             
-            case "save":
+        if cmd == "save":
                 save_name = args or "save"
                 #self.log(f"! Saving to {save_name}.json")
                 self.save_state(save_name)
 
-            case "load":
+        if cmd == "load":
                 save_name = args or "save"
                 #self.log(f"! Loading {save_name}.json")
                 self.load_state(save_name)
 
-            case "walk":
+        if cmd == "walk":
                 steps = args_raw
                 for step in steps:
                     self.log("You moved "+step)
                     self.move_player(step)
 
-            case "diag":
+        if cmd == "diag":
                 self.push_dialog("Player", f"{args}")
 
-            case "say":
+        if cmd == "say":
                 player = self.get_entity(self.player)
                 self.log(f"{player['tag']} says: {args}")
 
             #@todo for set and get, if entity not found, switch to variable modifying
             # or, change syntax, set player.health, but if object is world, then its variables
-            case "get":
+        if cmd == "get":
                 #a = args
 
                 if "." not in args:
@@ -47,7 +46,7 @@ class JECommand:
                     val = ent[param]
                     self.log(f"{ent['tag']}.{param} = {val} ({type(val)})")
 
-            case "set":
+        if cmd == "set":
                 if "." not in args:
                     return self.log("Invalid cmd format.")
 
@@ -81,7 +80,7 @@ class JECommand:
 
                     self.log(f"{target}.{val} = {param} ({type(param)})")
 
-            case "bg":
+        if cmd == "bg":
                 a = args_raw
                 if len(a) == 3:
                     print("bg [", a, "]")

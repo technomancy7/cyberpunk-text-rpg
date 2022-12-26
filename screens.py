@@ -1,6 +1,41 @@
 import pygame
 
 class JEScreens:
+    def switch_to_fst(self):
+        self.buttons = []
+        self.current_scene = self.fullscreen_terminal_scene
+
+
+    def switch_to_main_scene(self):
+        self.current_scene = self.main_scene
+        self.buttons = [
+            {
+                "pos": [12, 9], 
+                "spr": "diamond_dark", 
+                "spr_hl": "diamond", 
+                "on_click": lambda: self.move_player("u")
+            }, 
+            {
+                "pos": [11, 10], 
+                "spr": "diamond_dark", 
+                "spr_hl": "diamond",
+                "on_click": lambda: self.move_player("l")
+            },
+            {
+                "pos": [12, 10], 
+                "spr": "diamond_dark", 
+                "spr_hl": "diamond",
+                "on_click": lambda: self.move_player("d")
+            },
+            {
+                "pos": [13, 10], 
+                "spr": "diamond_dark", 
+                "spr_hl": "diamond",
+                "on_click": lambda: self.move_player("r")
+            },
+        ]
+
+
     def fullscreen_terminal_scene(self):
         # Background colour
         self.screen.fill(self.bg_colour)
@@ -185,7 +220,7 @@ class JEScreens:
             lines = spl(self.dialog_msg_proxy)
             sender = self.dialog_stack[0][0]
 
-            self.write_text(50, 183, f"{sender}", size=25, colour=(255, 255, 255))
+            if sender != "": self.write_text(50, 183, f"{sender}", size=25, colour=(255, 255, 255))
 
             ind = 225
             for ln in lines:

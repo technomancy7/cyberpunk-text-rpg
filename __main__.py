@@ -10,13 +10,103 @@ app_path = os.path.dirname(os.path.realpath(__file__))+"/"
 print(app_path)
 sys.path.append(app_path)
 sys.path.append(app_path+"libraries/")
+
 import pygame
-import state, screens, commands
+#import pygame.base
+
+# Import engine modules
+import state, screens, commands, gui
 
 world_name = "coreworld" #@todo command line argument to swap out world
 world = importlib.import_module("worlds."+world_name)
+#import coreworld as world
 
-class Main(state.JEState, screens.JEScreens, commands.JECommand, world.World):
+class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, world.World):
+    def __init__(self, *, autobuild_world = False):
+        # initialize the pygame module
+        pygame.init()
+        pygame.font.init()
+
+        # Location the current script file is located in
+        # Acts as home for any files related to this project
+        self.app_path = os.path.dirname(os.path.realpath(__file__))+"/"
+
+        # Variable for the current "scene", which handles the current screen rendering
+        self.current_scene = None
+        self.switch_to_main_scene()
+        self.cfg = {}
+        self.selected_console = False
+        
+        # fonts
+        self.font_file = "term.ttf"
+        self.bitmap_font = pygame.image.load(f'{self.app_path}img/system/font.bmp')
+        
+        # sprite index
+        self.sprites = {
+            "player": pygame.image.load(f"{self.app_path}img/char/hero.png"),
+            "circle": pygame.image.load(f"{self.app_path}img/char/save.png"),
+            "wood": pygame.image.load(f"{self.app_path}img/tiles/wood.png"),
+            "diamond": pygame.image.load(f"{self.app_path}img/system/diamond.png"),
+            "diamond_dark": pygame.image.load(f"{self.app_path}img/system/diamond_dark.png"),
+        }
+
+        # global values
+        self.spr_move_speed = 0.5
+        self.tile_size = 32
+        self.field_size = 10
+        self.bg_colour = [0, 0, 0]
+        self._proxy_bg_colour = [0, 0, 0]
+        self.bg_shift_speed = 0.2
+        self.input_disabled = False
+
+        self.ttext1 = [255, 255, 255]
+        self.ttext2 = [205, 205, 205]
+        self.ttext3 = [175, 175, 175]
+        self.ttext4 = [125, 125, 125]
+
+        # load system config
+        with open(f"{self.app_path}config.json", "r+") as f:
+            self.cfg = json.load(f)
+        
+        # load and set the logo and set title name
+        #logo = pygame.image.load("logo32x32.png")
+        #pygame.display.set_icon(logo)
+        pygame.display.set_caption("WIP")
+
+        # create a surface on screen
+        self.screen = pygame.display.set_mode(self.cfg["winsize"], pygame.SCALED|pygame.RESIZABLE)
+
+        # define a variable to control the main loop
+        self.running = True
+
+
+        # State values
+        self.variables = {}
+        self.entities = []
+        self.zones = []
+
+        # Global deltatime
+        self.dt = 0.0
+        self.raw_ticks = 0
+        self.seconds = 0
+        self.clock = pygame.time.Clock()
+        self.ticks = {}
+
+        # containers for the text input system
+        self.text_buffer = []
+        self.text_input_ln = ""
+        self.msg_history = []
+        self.msg_history_proxy = []
+        self.log_size_limit = 45
+
+        # Dialog box
+        self.dialog_box = None
+        self.dialog_stack = []
+        self.dialog_msg_proxy = ""
+
+        # build the default world
+        if(autobuild_world): self.build_world()
+
     def screen_to_tile(self, xy):
         real_x = int(xy[0] / self.tile_size)
         real_y = int(xy[1] / self.tile_size)
@@ -91,8 +181,13 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.World):
         self.screen.blit(image, (x, y), (source_x, source_y, width, height))
 
     def can_input(self) -> bool:
+        if self.input_disabled: return False
         if self.current_scene == self.main_scene: return True
         if self.current_scene == self.fullscreen_terminal_scene: return True
+        return False
+
+    def is_field_visible(self) -> bool:
+        if self.current_scene == self.main_scene: return True
         return False
 
     def write_text(self, x, y, text, *, fontfile = "", sysfont = "", size = 30, colour=(255, 255, 255)):
@@ -146,164 +241,6 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.World):
     @player.setter
     def player(self, new_player):
         self.variables["focus"] = new_player
-
-    def switch_to_fst(self):
-        self.buttons = []
-        self.current_scene = self.fullscreen_terminal_scene
-
-
-    def switch_to_main_scene(self):
-        self.current_scene = self.main_scene
-        self.buttons = [
-            {
-                "pos": [12, 9], 
-                "spr": "diamond_dark", 
-                "spr_hl": "diamond", 
-                "on_click": lambda: self.move_player("u")
-            }, 
-            {
-                "pos": [11, 10], 
-                "spr": "diamond_dark", 
-                "spr_hl": "diamond",
-                "on_click": lambda: self.move_player("l")
-            },
-            {
-                "pos": [12, 10], 
-                "spr": "diamond_dark", 
-                "spr_hl": "diamond",
-                "on_click": lambda: self.move_player("d")
-            },
-            {
-                "pos": [13, 10], 
-                "spr": "diamond_dark", 
-                "spr_hl": "diamond",
-                "on_click": lambda: self.move_player("r")
-            },
-        ]
-
-    def __init__(self, *, world="coreworld"):
-        # initialize the pygame module
-        pygame.init()
-        pygame.font.init()
-
-        # Location the current script file is located in
-        # Acts as home for any files related to this project
-        self.app_path = os.path.dirname(os.path.realpath(__file__))+"/"
-
-        # Variable for the current "scene", which handles the current screen rendering
-        self.current_scene = None
-        self.switch_to_main_scene()
-        self.cfg = {}
-        self.selected_console = False
-        
-        # fonts
-        self.font_file = "term.ttf"
-        self.bitmap_font = pygame.image.load(f'{self.app_path}img/system/font.bmp')
-        
-        # sprite index
-        self.sprites = {
-            "player": pygame.image.load(f"{self.app_path}img/char/hero.png"),
-            "circle": pygame.image.load(f"{self.app_path}img/char/save.png"),
-            "wood": pygame.image.load(f"{self.app_path}img/tiles/wood.png"),
-            "diamond": pygame.image.load(f"{self.app_path}img/system/diamond.png"),
-            "diamond_dark": pygame.image.load(f"{self.app_path}img/system/diamond_dark.png"),
-        }
-
-        # consts
-        self.spr_move_speed = 0.5
-        self.tile_size = 32
-        self.field_size = 10
-        self.bg_colour = [0, 0, 0]
-        self._proxy_bg_colour = [0, 0, 0]
-        self.bg_shift_speed = 0.2
-
-        self.ttext1 = [255, 255, 255]
-        self.ttext2 = [205, 205, 205]
-        self.ttext3 = [175, 175, 175]
-        self.ttext4 = [125, 125, 125]
-
-        # load system config
-        with open(f"{self.app_path}config.json", "r+") as f:
-            self.cfg = json.load(f)
-        
-        # load and set the logo and set title name
-        #logo = pygame.image.load("logo32x32.png")
-        #pygame.display.set_icon(logo)
-        pygame.display.set_caption("WIP")
-
-        # create a surface on screen
-        self.screen = pygame.display.set_mode(self.cfg["winsize"], pygame.SCALED|pygame.RESIZABLE)
-
-        # define a variable to control the main loop
-        self.running = True
-
-
-        # State values
-        self.variables = {}
-        self.entities = []
-        self.zones = []
-
-        # Global deltatime
-        self.dt = 0.0
-        self.raw_ticks = 0
-        self.seconds = 0
-        self.clock = pygame.time.Clock()
-        self.ticks = {}
-
-        # containers for the text input system
-        self.text_buffer = []
-        self.text_input_ln = ""
-        self.msg_history = []
-        self.msg_history_proxy = []
-        self.log_size_limit = 45
-
-
-        # Dialog box
-        self.dialog_box = None
-        self.dialog_stack = []
-        self.dialog_msg_proxy = ""
-
-        # build the default world
-        self.build_world()
-
-    def push_dialog(self, speaker, message):
-        self.dialog_stack.append([speaker, message])
-
-    def log(self, txt):
-        iters = 0
-        # Send a message to the in-game terminal
-        print(len(txt), "<", self.log_size_limit, "=", len(txt) <= self.log_size_limit)
-        if len(txt) < self.log_size_limit:
-            self.msg_history.append(txt)
-            self.msg_history_proxy.append("")
-        else:
-            out = []
-            while len(txt) >= self.log_size_limit:
-                iters += 1
-                newsplit = " ".join(txt[0:self.log_size_limit].split(" ")[:-1])
-                txt = txt[len(newsplit):]
-                self.msg_history.append(newsplit)
-                self.msg_history_proxy.append("")
-                if iters > 10:
-                    print("EMERGENCY BREAK: Log message too big.")
-                    break
-
-            self.msg_history.append(txt)
-            self.msg_history_proxy.append("")
-
-    def refresh_text_input(self):
-        # Refreshes the string of text used for the terminal input
-        self.text_input_ln = "".join(self.text_buffer)
-
-    def proceed_dialog(self):
-        if len(self.dialog_stack) > 0:
-            if self.dialog_msg_proxy != self.dialog_stack[0][1]:
-                self.dialog_msg_proxy = self.dialog_stack[0][1]
-            else:
-                self.dialog_stack.remove(self.dialog_stack[0])
-                self.dialog_msg_proxy = ""   
-            return True
-        return False
 
     def handle_mouse_down(self, event):
         # user clicked event
@@ -528,4 +465,5 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, world.World):
 if __name__=="__main__":
     # call the main function
     runtime = Main()
+    runtime.build_world()
     runtime.loop()

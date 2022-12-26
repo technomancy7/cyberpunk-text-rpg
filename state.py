@@ -41,35 +41,34 @@ class JEState:
         for entity in self.entities:
             if entity["tag"] == tag: return entity
 
-
     def _entity(self, **args):
         o = {
-            "tag": "", 
-            "x": 0,
+            "tag": "", #tag or ID to track tis object
+            "x": 0, # tile position
             "y": 0,
-            "screen_x": 0,
+            "screen_x": 0, # precise screen position
             "screen_y": 0,
             "name": "DEFAULT_NAME", 
             "description": "DEFAULT_DESCRIPTION", 
-            "contains": [], 
-            "location": "",
+            "contains": [], #inventory
+            "properties": [], #keyword to relate to perks, augmentations, abilities, etc, this ent has
+            "location": "", # zone tag that this ent exists in, or entity tag if is in inventory
             "type": "entity",
-            "events": {},
+            "events": {}, # table of events
             "sprite": None,
-            "direction": "d",
-            "solid": True,
-            "hidden": False,
+            "direction": "d", # u, d, l, r
+            "solid": True, # can entities walk through it or not
+            "hidden": False, # will it display in the field
             "health": 100,
             "health_max": 100,
             "invincible": False,
             "energy": 100,
             "energy_max": 100,
-            "alliance": "generic",
+            "alliance": "generic", # allianced tag
             "alliances": {
                 "generic": 0
             },
             "barks": {},
-            "events": {},
         }
         o.update(**args)
         self.entities.append(o)
