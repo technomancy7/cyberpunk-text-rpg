@@ -9,19 +9,36 @@ import sys, random
 app_path = os.path.dirname(os.path.realpath(__file__))+"/"
 print(app_path)
 sys.path.append(app_path)
-sys.path.append(app_path+"libraries/")
+
 
 from sys import platform
 print(f"Platform is... {platform}")
+
+if platform == "linux" or platform == "linux2":
+    sys.path.append(app_path+"py-linux/libraries/")
+    print("Local library path defined: ", app_path+"py-linux/libraries/")
+elif platform == "darwin":
+    print("Testing local libraries on OSX not supported yet. Trying global instead.")
+elif platform == "win32":
+    sys.path.append(app_path+"winpy32/libraries/")
+    print("Local library path defined: ", app_path+"winpy32/libraries/")
+elif platform == "win64":
+    sys.path.append(app_path+"winpy64/libraries/")
+    print("Local library path defined: ", app_path+"winpy64/libraries/")
+
 try:
     import pygame
 except:
     if platform == "linux" or platform == "linux2":
+        sys.path.append(app_path+"py-linux/libraries/")
         os.system(f"bash {app_path}/install_linux.sh")
+        os.system(f"bash {app_path}/run_linux.sh")
+        quit()
     elif platform == "darwin":
         print("Importing pygame failed and automatic fixing isn't supported on OSX yet.")
     elif platform == "win32":
         print("Importing pygame failed and automatic fixing isn't supported on win32 yet.")
+        sys.path.append(app_path+"winpy32/libraries/")
     else:
         print(f"Importing pygame failed and automatic fixing isn't supported on {platform} yet.")
 
