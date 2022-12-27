@@ -11,7 +11,20 @@ print(app_path)
 sys.path.append(app_path)
 sys.path.append(app_path+"libraries/")
 
-import pygame
+from sys import platform
+print(f"Platform is... {platform}")
+try:
+    import pygame
+except:
+    if platform == "linux" or platform == "linux2":
+        os.system(f"bash {app_path}/install_linux.sh")
+    elif platform == "darwin":
+        print("Importing pygame failed and automatic fixing isn't supported on OSX yet.")
+    elif platform == "win32":
+        print("Importing pygame failed and automatic fixing isn't supported on win32 yet.")
+    else:
+        print(f"Importing pygame failed and automatic fixing isn't supported on {platform} yet.")
+
 #import pygame.base
 
 # Import engine modules
@@ -51,7 +64,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         }
 
         # global values
-        self.spr_move_speed = 0.5
+        self.spr_move_speed = 4
         self.tile_size = 32
         self.field_size = 10
         self.bg_colour = [0, 0, 0]
@@ -85,6 +98,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.entities = []
         self.zones = []
 
+        self.init_events()
+        
         # Global deltatime
         self.dt = 0.0
         self.raw_ticks = 0
@@ -317,95 +332,6 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                 if event.unicode == "d" or event.scancode == 79:
                     self.move_player("r")
 
-    def collided(self, mover, target, direction = "u"):
-        return self.bark(target, "bump")
-
-    def bark(self, target, group = "ambient"):
-        target = self.get_entity(target)
-        barks = target.get("barks", {}).get(group, [])
-        if len(barks) > 0:
-            self.log(f"{target['name']}: {random.choice(barks)}")
-            return True
-
-    def move_entity(self, e, d):
-        #@todo finish this
-        #@todo once implemented, add a switch to use tank controls
-        # forward, backward, strafe right, straight left
-        # moves in directions relative to direction
-        # does not rotate
-        if d in ["fw", "bk", "sr", "sl"]:
-            pass
-
-        # rotate right, rotate left
-        if d in ["rr", "rl"]:
-            pass
-
-        # face up, face down, face left, face right
-        # turns in direction
-        # does not move
-        if d in ["fu", "fd", "fl", "fr"]:
-            pass
-
-        # up, down, left, right
-        # move in directions relative to screen
-        # rotates to direction
-        if d in ["u", "d", "l", "r"]:
-            e["direction"] = d
-            if d == "u":
-                collisions = self.collisions_at(e["x"], e["y"]-1)
-                if len(collisions) > 0:
-                    if not self.collided(e, collisions[0]): 
-                        self.log(f"! You bumped in to {collisions[0]['name']}")
-                else:
-                    if e["y"] > 0:
-                        e["y"] -= 1
-
-            if d == "d":
-                collisions = self.collisions_at(e["x"], e["y"]+1)
-                if len(collisions) > 0:
-                    if not self.collided(e, collisions[0]): 
-                        self.log(f"! You bumped in to {collisions[0]['name']}")
-                else:
-                    if e["y"] < self.field_size:
-                        e["y"] += 1
-
-            if d == "r":
-                collisions = self.collisions_at(e["x"]+1, e["y"])
-                if len(collisions) > 0:
-                    if not self.collided(e, collisions[0]): 
-                        self.log(f"! You bumped in to {collisions[0]['name']}")
-                else:
-                    if e["x"] < self.field_size:
-                        e["x"] += 1
-
-            if d == "l":
-                collisions = self.collisions_at(e["x"]-1, e["y"])
-                if len(collisions) > 0:
-                    if not self.collided(e, collisions[0]): 
-                        self.log(f"! You bumped in to {collisions[0]['name']}")
-                else:
-                    if e["x"] > 0:
-                        e["x"] -= 1
-
-    def collisions_at(self, x, y):
-        out = []
-        for ent in self.entities:
-            if ent["x"] == x and ent["y"] == y and ent["hidden"] == False and ent["solid"] == True:
-                out.append(ent)
-        return out
-
-    def find_entities_at(self, x, y):
-        out = []
-        for ent in self.entities:
-            if ent["x"] == x and ent["y"] == y:
-                out.append(ent)
-        return out
-
-    def move_player(self, d):
-        player = self.get_entity(self.player)
-        if player != None:
-            self.move_entity(player, d)
-
     def global_timer(self):
         # called every second (roughly)
         
@@ -417,7 +343,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.dt += dt
         self.raw_ticks += 1
 
-        if self.raw_ticks % 2 == 0:
+        if self.raw_ticks % 1 == 0:
             for i, val in enumerate(self.msg_history):
                 if self.msg_history_proxy[i] != val:
                     self.msg_history_proxy[i] += val[len(self.msg_history_proxy[i])]
@@ -455,7 +381,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
             
             self.current_scene()
 
-            self.global_tick((self.clock.tick()/1000)%60)
+            self.global_tick((self.clock.tick(self.variables.get("fps_limit", 60))/1000)%60)
 
             # Updates the display
             pygame.display.flip()

@@ -5,7 +5,7 @@ class JEGUI:
     def log(self, txt):
         iters = 0
         # Send a message to the in-game terminal
-        print(len(txt), "<", self.log_size_limit, "=", len(txt) <= self.log_size_limit)
+        #print(len(txt), "<", self.log_size_limit, "=", len(txt) <= self.log_size_limit)
         if len(txt) < self.log_size_limit:
             self.msg_history.append(txt)
             self.msg_history_proxy.append("")

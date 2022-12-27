@@ -172,12 +172,13 @@ class JEScreens:
         # Get health and energy values as percentage
         hp = 100*(player['health']/player['health_max'])
         ep = 100*(player['energy']/player['energy_max'])
+        wgt = 100*(player['container_weight']/player['weight_limit'])
         self.write_bmp(text_col, 9, f"Health: {hp}% ({player['health']}/{player['health_max']})")
         self.write_bmp(text_col, 10, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
-        self.write_bmp(text_col, 11, f"Move speed: {self.variables.get('sprms', 0.5)}")
-        cursor = self.screen_to_tile(pygame.mouse.get_pos())
-        #print(pygame.mouse.get_pressed())
-        
+        self.write_bmp(text_col, 11, f"Weight: {wgt} ({player['container_weight']}/{player['weight_limit']})")
+        self.write_bmp(text_col, 12, f"FPS: {int(self.clock.get_fps())}")
+        precise_cursor = pygame.mouse.get_pos()
+        cursor = self.screen_to_tile(precise_cursor)
 
         for button in self.buttons:
             xy = button["pos"]

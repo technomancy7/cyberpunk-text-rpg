@@ -17,7 +17,8 @@ class World:
         self._zone(name="The Bar", tag="the_bar")
         self.set_zone("player", "the_bar")
 
-        f = self._entity(tag="pistol", sprite="circle", x=6, y=6, name="Pistol", solid=False)
+        f = self._entity(tag="pistol", sprite="circle", x=6, y=6, name="Pistol", solid=False, 
+            properties=["inventory"], weight=1)
         self.set_zone("pistol", "the_bar")
         
 
