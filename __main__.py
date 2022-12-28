@@ -38,7 +38,6 @@ except:
         print("Importing pygame failed and automatic fixing isn't supported on OSX yet.")
     elif platform == "win32":
         print("Importing pygame failed and automatic fixing isn't supported on win32 yet.")
-        sys.path.append(app_path+"winpy32/libraries/")
     else:
         print(f"Importing pygame failed and automatic fixing isn't supported on {platform} yet.")
 
@@ -62,11 +61,16 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.app_path = os.path.dirname(os.path.realpath(__file__))+"/"
 
         # Variable for the current "scene", which handles the current screen rendering
+        self.buttons = []
+        self.mouse_zones = []
+
         self.current_scene = None
         self.switch_to_main_scene()
         self.cfg = {}
         self.selected_console = False
-        
+        #self.status_screen = "stats"
+        self.switch_status_scene("stats")
+
         # fonts
         self.font_file = "term.ttf"
         self.bitmap_font = pygame.image.load(f'{self.app_path}img/system/font.bmp')
@@ -81,13 +85,13 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         }
 
         # global values
-        self.spr_move_speed = 4
-        self.tile_size = 32
-        self.field_size = 10
-        self.bg_colour = [0, 0, 0]
-        self._proxy_bg_colour = [0, 0, 0]
-        self.bg_shift_speed = 0.2
-        self.input_disabled = False
+        self.spr_move_speed     = 4
+        self.tile_size          = 32
+        self.field_size         = 10
+        self.bg_colour          = [0, 0, 0]
+        self._proxy_bg_colour   = [0, 0, 0]
+        self.bg_shift_speed     = 0.2
+        self.input_disabled     = False
 
         self.ttext1 = [255, 255, 255]
         self.ttext2 = [205, 205, 205]
@@ -111,30 +115,33 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
 
 
         # State values
-        self.variables = {}
-        self.entities = []
-        self.zones = []
+        self.variables  = {}
+        self.entities   = []
+        self.zones      = []
+        
+        self.selected_inventory = ""
+        self.inventory_menu_labels = []
 
         self.init_events()
         
         # Global deltatime
-        self.dt = 0.0
-        self.raw_ticks = 0
-        self.seconds = 0
-        self.clock = pygame.time.Clock()
-        self.ticks = {}
+        self.dt         = 0.0
+        self.raw_ticks  = 0
+        self.seconds    = 0
+        self.clock      = pygame.time.Clock()
+        self.ticks      = {}
 
         # containers for the text input system
-        self.text_buffer = []
-        self.text_input_ln = ""
-        self.msg_history = []
-        self.msg_history_proxy = []
-        self.log_size_limit = 45
+        self.text_buffer        = []
+        self.text_input_ln      = ""
+        self.msg_history        = []
+        self.msg_history_proxy  = []
+        self.log_size_limit     = 45
 
         # Dialog box
-        self.dialog_box = None
-        self.dialog_stack = []
-        self.dialog_msg_proxy = ""
+        self.dialog_box         = None
+        self.dialog_stack       = []
+        self.dialog_msg_proxy   = ""
 
         # build the default world
         if(autobuild_world): self.build_world()
@@ -267,14 +274,32 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
             self.bg_colour[2] -= self.bg_shift_speed
 
     @property
+    def active_zone(self):
+        return self.player_object['location']
+
+    @property
+    def active_zone_object(self):
+        return self.get_zone(self.active_zone)
+        
+    @property
+    def player_object(self):
+        if self._player == None:
+            self._player = self.get_entity(self.player)
+
+        return self._player
+
+    @property
     def player(self):
         return self.variables.get("focus", None)
 
     @player.setter
     def player(self, new_player):
         self.variables["focus"] = new_player
+        self._player = self.get_entity(new_player)
+        print("player updated...", new_player)
 
     def handle_mouse_down(self, event):
+        #print(event)
         # user clicked event
         if self.current_scene == self.main_scene: # handling main scene
             if event.button == 1: # left mouse click
@@ -295,7 +320,100 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                         if button.get("on_click", None): # send to the buttons on_click event if it exists
                             button["on_click"]()
 
+            for mz in self.mouse_zones:
+                px = event.pos[0]
+                py = event.pos[1]
+                if px > mz["top_left"] and px < mz['top_right'] and py > mz['bottom_left'] and py < mz['bottom_right']:
+                    print(event.button == mz['button'], event.button, mz['button'])
+                    if event.button == mz['button']:
+                        print(f"{event.pos} is inside {mz}")
+                        mz['callback'](**mz['payload'])
 
+    def purge_mz(self, grp):
+        self.mouse_zones = list(filter(lambda a: a['group'] != grp, self.mouse_zones))
+
+    def mz_callback_inventory(self, data):
+        name = data['item']
+        item = self.get_entity(name)
+        print(f"Clicked inventory {name}")
+        self.purge_mz("inv_item_menu")
+        self.inventory_menu_labels = []
+        self.selected_inventory = name
+
+        modify_by       = 10
+        top_left        = 545
+        top_right       = 600
+        bottom_left     = 55
+        bottom_right    = 65
+        
+        if "equip" in item['properties']:
+            self.inventory_menu_labels.append("Equip")
+            self.mouse_zones.append({"top_left": top_left,      "top_right": top_right,
+                                    "bottom_left": bottom_left, "bottom_right": bottom_right,
+                                    "group": "inventory",
+                                    "button": 1,                "payload": {"item": item},
+                                    "callback": lambda x: print(f"Equip {name}")})
+            bottom_left     += modify_by
+            bottom_right    += modify_by
+
+        if "quest" not in item['properties'] and "equipped" not in item['properties']:
+            self.inventory_menu_labels.append("Drop")
+            self.mouse_zones.append({"top_left": top_left,      "top_right": top_right,
+                                    "bottom_left": bottom_left, "bottom_right": bottom_right,
+                                    "group": "inventory",
+                                    "button": 1,                "payload": {"item": item},
+                                    "callback": lambda x: print(f"Drop {name}")})
+
+            bottom_left     += modify_by
+            bottom_right    += modify_by
+
+    def update_inventory_mousezones(self):
+        self.purge_mz("inventory")
+        modify_by       = 10
+        top_left        = 385
+        top_right       = 520
+        bottom_left     = 55
+        bottom_right    = 65
+
+        for item in self.player_object["contains"]:
+            self.mouse_zones.append({"top_left": top_left, 
+                                    "top_right": top_right,
+                                    "bottom_left": bottom_left,
+                                    "bottom_right": bottom_right,
+                                    "group": "inventory",
+                                    "button": 1,
+                                    "payload": {"item": item},
+                                    "callback": self.mz_callback_inventory})
+            #print(item)
+            bottom_left     += modify_by
+            bottom_right    += modify_by
+
+    def core_mz_callback(self, **args):
+        if args.get("status"):
+            new_status = args["status"]
+            self.switch_status_scene(new_status)
+
+    def switch_status_scene(self, status):
+        print(f"Activating status screen {status}")
+        self.status_screen = status
+        self.purge_mz("status_ui")
+        #self.mouse_zones[f"status_{status}"] = []
+        if status == "stats":
+            self.mouse_zones.append({"top_left": 540,      "top_right": 585,
+                            "bottom_left": 15, "bottom_right": 25,
+                            "group": "status_ui",
+                            "button": 1,                "payload": {"status": "inventory"},
+                            "callback": self.core_mz_callback})
+                            
+        if status == "inventory": #build mouse zones for each inventory item
+            self.mouse_zones.append({"top_left": 380,      "top_right": 425,
+                            "bottom_left": 15, "bottom_right": 25,
+                            "group": "status_ui",
+                            "button": 1,                "payload": {"status": "stats"},
+                            "callback": self.core_mz_callback})
+            self.update_inventory_mousezones()
+            
+    
     def handle_key_down(self, event):
         # keyboard input
         if self.can_input(): # if user can press buttons right now
@@ -315,6 +433,13 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
 
             if self.current_scene == self.main_scene and event.key == 9:
                 self.selected_console = not self.selected_console
+
+            if self.current_scene == self.main_scene and event.scancode == 59:
+                if self.status_screen == "stats":
+                    self.switch_status_scene("inventory")
+                    
+                elif self.status_screen == "inventory":
+                    self.switch_status_scene("stats")
 
             if self.selected_console or self.current_scene == self.fullscreen_terminal_scene:
                 if event.key == 13:
@@ -337,6 +462,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                     self.refresh_text_input()
 
             else:
+                player = self.player_object
                 if event.unicode == "w" or event.scancode == 82:
                     self.move_player("u")
                         
@@ -351,14 +477,12 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
 
     def global_timer(self):
         # called every second (roughly)
-        
-        # typewriter effect
         pass
 
     def global_tick(self, dt):
         # add deltatime (delay between last frame in milliseconds) to overall counter
-        self.dt += dt
-        self.raw_ticks += 1
+        self.dt         += dt
+        self.raw_ticks  += 1
 
         if self.raw_ticks % 1 == 0:
             for i, val in enumerate(self.msg_history):

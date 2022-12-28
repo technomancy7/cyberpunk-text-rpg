@@ -70,7 +70,9 @@ class JEScreens:
         # Background colour
         self.screen.fill(self.bg_colour)
         self.shift_bg()
-        
+        precise_cursor = pygame.mouse.get_pos()
+        cursor = self.screen_to_tile(precise_cursor)
+
         #self.draw_text(20, 30, "Field/tile display")
         #self.draw_text(400, 30, "Stats/info/controls")
 
@@ -123,9 +125,10 @@ class JEScreens:
             if current >= limit:
                 break
 
+
+        # field display            
         text_col = 45
-        # field display
-        
+
         if player == None: 
             print("ERROR: PLAYER NOT FOUND")
         else:
@@ -140,45 +143,81 @@ class JEScreens:
                         self.draw_arbitrary(xy, spr)
 
                 num_ents = 0
-                self.write_bmp(text_col, 20, f"Entities in this zone:")
+                if(self.status_screen == "stats"): self.write_bmp(text_col, 20, f"Entities in this zone:")
 
-                # = self.variables.get("sprms", 0.5)#0.5
+
                 for entity in self.entities:
                     if not entity["hidden"] and entity["sprite"] and entity["location"] == cur_loc["tag"]:
                         if entity["screen_x"] > entity["x"] * self.tile_size:
                             entity["screen_x"] -= self.spr_move_speed
+                            entity["spr_moving"] = True
 
-                        if entity["screen_x"] < entity["x"] * self.tile_size:
+                        elif entity["screen_x"] < entity["x"] * self.tile_size:
                             entity["screen_x"] += self.spr_move_speed
-                            
-                        if entity["screen_y"] > entity["y"] * self.tile_size:
+                            entity["spr_moving"] = True
+
+                        elif entity["screen_y"] > entity["y"] * self.tile_size:
                             entity["screen_y"] -= self.spr_move_speed
+                            entity["spr_moving"] = True
 
-                        if entity["screen_y"] < entity["y"] * self.tile_size:
+                        elif entity["screen_y"] < entity["y"] * self.tile_size:
                             entity["screen_y"] += self.spr_move_speed
+                            entity["spr_moving"] = True
 
+                        else:
+                            entity["spr_moving"] = False
                         self.draw_entity_precise(entity)
 
-                        num_ents += 1
-                        l = f"{entity['x']}x{entity['y']}"
-                        l = f"{entity['x']*self.tile_size}x{entity['y']*self.tile_size} / {entity['screen_x']}x{entity['screen_y']}"
-                        #h = f"Hostility: {self.get_hostility(entity, player)}"
-                        #h = f"Facing {entity['direction']}"
-                        self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['name']} ({l})")
+                        if(self.status_screen == "stats"): 
+                            num_ents += 1
+                            l = f"{entity['x']}x{entity['y']}"
+                            l = f"{entity['x']*self.tile_size}x{entity['y']*self.tile_size} / {entity['screen_x']}x{entity['screen_y']}"
+                        
+                            self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['name']} ({l})")
 
         # Border around the field
         pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 1)
 
-        # Get health and energy values as percentage
-        hp = 100*(player['health']/player['health_max'])
-        ep = 100*(player['energy']/player['energy_max'])
-        wgt = 100*(player['container_weight']/player['weight_limit'])
-        self.write_bmp(text_col, 9, f"Health: {hp}% ({player['health']}/{player['health_max']})")
-        self.write_bmp(text_col, 10, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
-        self.write_bmp(text_col, 11, f"Weight: {wgt} ({player['container_weight']}/{player['weight_limit']})")
-        self.write_bmp(text_col, 12, f"FPS: {int(self.clock.get_fps())}")
-        precise_cursor = pygame.mouse.get_pos()
-        cursor = self.screen_to_tile(precise_cursor)
+
+        if self.status_screen == "stats":
+            self.write_bmp(text_col+22, 2, f" (I) >")
+            self.write_bmp(text_col+10, 2, " -- Stats --")
+            # Get health and energy values as percentage
+            hp = 100*(player['health']/player['health_max'])
+            ep = 100*(player['energy']/player['energy_max'])
+            wgt = 100*(player['container_weight']/player['weight_limit'])
+            self.write_bmp(text_col, 7, f"Health: {hp}% ({player['health']}/{player['health_max']})")
+            self.write_bmp(text_col, 8, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
+            self.write_bmp(text_col, 9, f"Weight: {wgt} ({player['container_weight']}/{player['weight_limit']})")
+
+            if self.variables.get("debug", False):
+                self.write_bmp(text_col, 10, f"FPS: {int(self.clock.get_fps())}")
+                self.write_bmp(text_col, 11, f"POS: {precise_cursor}")
+
+        if self.status_screen == "inventory":
+            self.write_bmp(text_col+2, 2, f" < (S)")
+            self.write_bmp(text_col+8, 2, " -- Inventory --")
+            wgt = 100*(player['container_weight']/player['weight_limit'])
+            self.write_bmp(text_col, 5, f"Weight: {wgt} ({player['container_weight']}/{player['weight_limit']})")
+            i = 7
+            for item in player["contains"]:
+                en = self.get_entity(item)
+                #xy = self.tile_to_screen([text_col, i])
+                if en['tag'] == self.selected_inventory:
+                    self.write_bmp(text_col, i, f"> {i-7}. {en['name']}")
+                else:
+                    self.write_bmp(text_col, i, f"{i-7}. {en['name']}")
+                i += 1
+            
+            lbli = 7
+            for lbl in self.inventory_menu_labels:
+                self.write_bmp(text_col+25, lbli, f"{lbl}")
+                lbli += 1
+            """for mz in self.mouse_zones:
+                px = precise_cursor[0]
+                py = precise_cursor[1]
+                if px > mz["top_left"] and px < mz['top_right'] and py > mz['bottom_left'] and py < mz['bottom_right']:
+                    print(f"{precise_cursor} is inside {mz}")"""
 
         for button in self.buttons:
             xy = button["pos"]

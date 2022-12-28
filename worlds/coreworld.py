@@ -11,16 +11,19 @@ class World:
 
         # SETUP PLAYER
         self.player = "player"
-        self._entity(tag="player", sprite="player", x=2, y=2, alliance="player")
+        self._entity(tag="player", sprite="player", x=2, y=2, alliance="player", name="The Player")
 
         # ZONE 1: THE BAR
         self._zone(name="The Bar", tag="the_bar")
         self.set_zone("player", "the_bar")
 
-        f = self._entity(tag="pistol", sprite="circle", x=6, y=6, name="Pistol", solid=False, 
-            properties=["inventory"], weight=1)
+        f = self._entity(tag="pistol", sprite="circle", name="9mm Pistol", solid=False, 
+            properties=["inventory", "equip"], slot = "weapon", weight=1, x=6, y=6)
         self.set_zone("pistol", "the_bar")
-        
+
+        f = self._entity(tag="medkit", sprite="circle", x=6, y=6, name="Medkit", solid=False, 
+            properties=["inventory"], weight=1, events={"use": "use_item"})
+        self.set_zone("medkit", "the_bar", x=7, y=6)
 
 
         f = self._entity(tag="target_dummy", sprite="circle", x=2, y=6, name="target dummy")

@@ -60,6 +60,8 @@ class JEState:
             return True
 
     def move_entity(self, e, d):
+        e = self.get_entity(e)
+
         #@todo finish this
         #@todo once implemented, add a switch to use tank controls
         # forward, backward, strafe right, straight left
@@ -129,7 +131,7 @@ class JEState:
     def find_entities_at(self, x, y, properties = []):
         out = []
         for ent in self.entities:
-            if ent["x"] == x and ent["y"] == y:
+            if ent["location"] == self.active_zone and ent["x"] == x and ent["y"] == y:
                 if len(properties) > 0:
                     if any(x in ent['properties'] for x in properties):
                         out.append(ent)
@@ -138,7 +140,7 @@ class JEState:
         return out
 
     def move_player(self, d):
-        player = self.get_entity(self.player)
+        player = self.player_object
         if player != None:
             self.move_entity(player, d)
             if self.variables.get("auto_pickup", True):
@@ -149,12 +151,66 @@ class JEState:
                             self.set_container(item, player)
                             self.log(f"! You picked up {item['name']}.")
 
+    def set_zone(self, ent, zone, *, x = None, y = None):
+        ent = self.get_entity(ent)
+        new_zone = self.get_zone(zone)
+
+        if ent["location"] != "":
+            loc = self.get_zone(ent['location'])
+            if loc != None:
+                loc['contains'].remove(ent['tag'])
+        
+        ent['location'] = new_zone['tag']
+        if ent['tag'] not in new_zone['contains']: new_zone["contains"].append(ent['tag'])
+        if type(x) == int: ent["x"] = x
+        if type(y) == int: ent["y"] = y
+
+    def set_container(self, ent, zone):
+        ent = self.get_entity(ent)
+        container = self.get_entity(zone)
+        ent["x"] = -1
+        ent["y"] = -1
+        if ent["location"] != "":
+            loc = self.get_zone(ent['location'])
+            if loc != None:
+                loc['contains'].remove(ent['tag'])
+            
+            loc2 = self.get_entity(ent['location'])
+            if loc2 != None:
+                loc2["contains"].remove(ent['tag'])
+                loc2["container_weight"] -= ent["weight"]
+        
+        ent['location'] = container['tag']
+        if ent['tag'] not in container['contains']: 
+            container["contains"].append(ent['tag'])
+            container["container_weight"] += ent["weight"]
+
+        if self.current_scene == self.main_scene and self.status_screen == "inventory" and zone['tag'] == self.player:
+            self.update_inventory_mousezones()
+
+    def set_hostility(self, ent, alliance, value):
+        ent = self.get_entity(ent)
+        ent["alliances"][alliance]= value
+
+    def get_hostility(self, e1, e2) -> int:
+        e1a = e1["alliances"]
+        #e2a = e2["alliances"]
+
+        return e1a.get(e2['alliance'], 0)
+
+    def is_hostile(self, e1, e2):
+        return self.get_hostility(e1, e2) == -1
+
+    def is_friendly(self, e1, e2):
+        return self.get_hostility(e1, e2) == 1
 
     def _entity(self, **args):
         o = {
             "tag": "", #tag or ID to track tis object
             "x": 0, # tile position
             "y": 0,
+            "move_queue": [],
+            "spr_moving": False,
             "screen_x": 0, # precise screen position
             "screen_y": 0,
             "name": "DEFAULT_NAME", 
@@ -186,53 +242,6 @@ class JEState:
         self.entities.append(o)
         return o
 
-    def set_zone(self, ent, zone):
-        ent = self.get_entity(ent)
-        new_zone = self.get_zone(zone)
-
-        if ent["location"] != "":
-            loc = self.get_zone(ent['location'])
-            if loc != None:
-                loc['contains'].remove(ent['tag'])
-        
-        ent['location'] = new_zone['tag']
-        if ent['tag'] not in new_zone['contains']: new_zone["contains"].append(ent['tag'])
-
-    def set_container(self, ent, zone):
-        ent = self.get_entity(ent)
-        container = self.get_entity(zone)
-
-        if ent["location"] != "":
-            loc = self.get_zone(ent['location'])
-            if loc != None:
-                loc['contains'].remove(ent['tag'])
-            
-            loc2 = self.get_entity(ent['location'])
-            if loc2 != None:
-                loc2["contains"].remove(ent['tag'])
-                loc2["container_weight"] -= ent["weight"]
-        
-        ent['location'] = container['tag']
-        if ent['tag'] not in container['contains']: 
-            container["contains"].append(ent['tag'])
-            container["container_weight"] += ent["weight"]
-
-    def set_hostility(self, ent, alliance, value):
-        ent = self.get_entity(ent)
-        ent["alliances"][alliance]= value
-
-    def get_hostility(self, e1, e2) -> int:
-        e1a = e1["alliances"]
-        #e2a = e2["alliances"]
-
-        return e1a.get(e2['alliance'], 0)
-
-    def is_hostile(self, e1, e2):
-        return self.get_hostility(e1, e2) == -1
-
-    def is_friendly(self, e1, e2):
-        return self.get_hostility(e1, e2) == 1
-
     def _zone(self, **args):
         o = {
             "tag": "", 
@@ -251,33 +260,3 @@ class JEState:
         o.update(**args)
         self.zones.append(o)
         return o
-# 
-# Base class of all in-world objects
-class TObject:
-    pass
-
-class Zone(TObject):
-    def __init__(self):
-        self.contains = [] # entities inside this zone
-        
-# Entity objects, characters, NPC's, decorations, etc'
-class Entity(TObject):
-    def __init__(self, ID):
-        self.ID = ID
-        self.x = 0 # X position on screen
-        self.y = 0 # Y position on screen
-        self.grid_x = 0 # X slot on the grid
-        self.grid_y = 0 # Y slot on grid
-        self.sprite = None # Display image
-        self.hidden = False # Wether it's being rendered'
-        self.zone = None # Zone the entity is inside
-        self.contains = [] # Character or containers inventory
-    
-    def move_pos(self, x, y):
-        self.x = x
-        self.y = y
-        #@todo math here to make x/y screen map to the grid
-
-# The Player!
-class Player(Entity):
-    pass
