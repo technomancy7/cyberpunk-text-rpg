@@ -213,6 +213,18 @@ class JEScreens:
             for lbl in self.inventory_menu_labels:
                 self.write_bmp(text_col+25, lbli, f"{lbl}")
                 lbli += 1
+
+            if self.selected_inventory != "":
+                desc = self.get_entity(self.selected_inventory)['description']
+                start = 183
+                #self.write_bmp(text_col, 25, f"{desc}")
+                if "<br>" in desc:
+                    for item in desc.split("<br>"):
+                        self.write_text(360, start, f"{item}", size=12, colour=(255, 255, 255))
+                        start += 20
+                else:
+                    self.write_text(360, start, f"{desc}", size=12, colour=(255, 255, 255))
+
             """for mz in self.mouse_zones:
                 px = precise_cursor[0]
                 py = precise_cursor[1]
@@ -268,5 +280,9 @@ class JEScreens:
                 ind += 25
 
             if self.dialog_msg_proxy == self.dialog_stack[0][1]:
-                self.write_text(520, 380, f"[Confirm]", size=10, colour=(255, 255, 255))
+                #self.write_text(520, 380, f"[Confirm]", size=10, colour=(255, 255, 255))
+                if len(self.dialog_stack) > 1:
+                    self.write_text(510, 380, f"[Confirm] >", size=10, colour=(255, 255, 255))
+                else:
+                    self.write_text(520, 380, f"[Confirm]", size=10, colour=(255, 255, 255))
 

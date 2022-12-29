@@ -18,11 +18,13 @@ class World:
         self.set_zone("player", "the_bar")
 
         f = self._entity(tag="pistol", sprite="circle", name="9mm Pistol", solid=False, 
-            properties=["inventory", "equip"], slot = "weapon", weight=1, x=6, y=6)
+            properties=["inventory", "combat"], slot = "weapon", weight=1, x=6, y=6,
+            description="""A basic old-world pistol, barely<br>functional.""")
         self.set_zone("pistol", "the_bar")
 
         f = self._entity(tag="medkit", sprite="circle", x=6, y=6, name="Medkit", solid=False, 
-            properties=["inventory"], weight=1, events={"use": "use_item"})
+            properties=["inventory"], weight=1, events={"use": "use_item"},
+            description="A set of medical supplies.")
         self.set_zone("medkit", "the_bar", x=7, y=6)
 
 
@@ -38,3 +40,4 @@ class World:
                 self.zones[0]["map"].append([[x, y], ["wood"]])
 
         self.push_dialog("Intro", "This is an intro! This dialog box is for testing purposes. I wonder if it'll even work, who knows really.")
+        self.push_dialog("Intro", "Now get out there and test stuff!")

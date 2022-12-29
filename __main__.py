@@ -5,6 +5,7 @@ import json
 import importlib
 import os
 import sys, random
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
 app_path = os.path.dirname(os.path.realpath(__file__))+"/"
 print(app_path)
@@ -332,7 +333,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
     def purge_mz(self, grp):
         self.mouse_zones = list(filter(lambda a: a['group'] != grp, self.mouse_zones))
 
-    def mz_callback_inventory(self, data):
+    def mz_callback_inventory(self, **data):
         name = data['item']
         item = self.get_entity(name)
         print(f"Clicked inventory {name}")
