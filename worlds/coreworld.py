@@ -34,10 +34,20 @@ class World:
         self.set_zone("target_dummy", "the_bar")
 
         
+        ep = self._entity(tag="bar_out_exit", sprite="circle", x=7, y=0, name="Exit to street", solid=False)
+        ep['data']['exit'] = {"map": "the_street", "pos": [2, 2]}
+        self.set_zone("bar_out_exit", "the_bar")
+        self.set_event(ep, "on_player", "teleport")
 
         for x in range(11):
             for y in range(11):
                 self.zones[0]["map"].append([[x, y], ["wood"]])
 
-        self.push_dialog("Intro", "This is an intro! This dialog box is for testing purposes. I wonder if it'll even work, who knows really.")
-        self.push_dialog("Intro", "Now get out there and test stuff!")
+        #self.push_dialog("Intro", "This is an intro! This dialog box is for testing purposes. I wonder if it'll even work, who knows really.")
+        #self.push_dialog("Intro", "Now get out there and test stuff!")
+
+        self._zone(name="The Streets", tag="the_street")
+        ep2 = self._entity(tag="bar_entr", sprite="circle", x=7, y=0, name="To Bar", solid=False)
+        ep2['data']['exit'] = {"map": "the_bar", "pos": [7, 1]}
+        self.set_zone("bar_entr", "the_street")
+        self.set_event(ep2, "on_player", "teleport")

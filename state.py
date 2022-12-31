@@ -4,11 +4,30 @@ class JEState:
     def pickup_item(self, **args):
         print(f"pickup {args}")
 
+    def teleport(self, **args):
+        exit_point = args['source']['data'].get("exit", {})
+        print(f"teleport {exit_point}")
+        self.set_zone(self.player, exit_point['map'])
+        self.set_pos(self.player, exit_point['pos'][0], exit_point['pos'][1])
     def init_events(self):
         self.events = {
-            "pickup_item": self.pickup_item
+            "pickup_item": self.pickup_item,
+            "teleport": self.teleport
         }
-        
+    
+    def set_event(self, obj, event_type, event):
+        obj = self.get_entity(obj)
+        if obj['events'].get(event_type, None) == None: obj['events'][event_type] = []
+        obj['events'][event_type].append(event)
+
+    def trigger_event(self, obj, event_type, **payload):
+        obj = self.get_entity(obj)
+        if obj['events'].get(event_type, None) == None: return
+        for evt in obj['events'][event_type]:
+            if self.events.get(evt, None):
+                payload["source"] = obj
+                self.events[evt](**payload)
+
     def save_state(self, name = "save"):
         data = self.export_state()
         with open(self.app_path+"states/"+name+".json", "w+") as f:   
@@ -50,6 +69,7 @@ class JEState:
             if entity["tag"] == tag: return entity
 
     def collided(self, mover, target, direction = "u"):
+        self.trigger_event(target, "bumped", mover=mover, direction=direction)
         return self.bark(target, "bump")
 
     def bark(self, target, group = "ambient"):
@@ -88,7 +108,7 @@ class JEState:
             if d == "u":
                 collisions = self.collisions_at(e["x"], e["y"]-1)
                 if len(collisions) > 0:
-                    if not self.collided(e, collisions[0]): 
+                    if e == self.player_object and not self.collided(e, collisions[0]): 
                         self.log(f"! You bumped in to {collisions[0]['name']}")
                 else:
                     if e["y"] > 0:
@@ -97,7 +117,7 @@ class JEState:
             if d == "d":
                 collisions = self.collisions_at(e["x"], e["y"]+1)
                 if len(collisions) > 0:
-                    if not self.collided(e, collisions[0]): 
+                    if e == self.player_object and not self.collided(e, collisions[0]): 
                         self.log(f"! You bumped in to {collisions[0]['name']}")
                 else:
                     if e["y"] < self.field_size:
@@ -106,7 +126,7 @@ class JEState:
             if d == "r":
                 collisions = self.collisions_at(e["x"]+1, e["y"])
                 if len(collisions) > 0:
-                    if not self.collided(e, collisions[0]): 
+                    if e == self.player_object and not self.collided(e, collisions[0]): 
                         self.log(f"! You bumped in to {collisions[0]['name']}")
                 else:
                     if e["x"] < self.field_size:
@@ -115,7 +135,7 @@ class JEState:
             if d == "l":
                 collisions = self.collisions_at(e["x"]-1, e["y"])
                 if len(collisions) > 0:
-                    if not self.collided(e, collisions[0]): 
+                    if e == self.player_object and not self.collided(e, collisions[0]): 
                         self.log(f"! You bumped in to {collisions[0]['name']}")
                 else:
                     if e["x"] > 0:
@@ -143,13 +163,22 @@ class JEState:
         player = self.player_object
         if player != None:
             self.move_entity(player, d)
-            if self.variables.get("auto_pickup", True):
-                ent = self.find_entities_at(player['x'], player["y"], ["inventory"])
-                if len(ent):
-                    for item in ent:
+            ent = self.find_entities_at(player['x'], player["y"])
+
+            if len(ent):
+                for item in ent:
+                    if self.variables.get("auto_pickup", True) and "inventory" in item['properties']:
                         if item["weight"] + player["container_weight"] < player["weight_limit"]:
                             self.set_container(item, player)
                             self.log(f"! You picked up {item['name']}.")
+                            self.trigger_event(item, "pickup_item")
+
+                    self.trigger_event(item, "on_player")
+
+    def set_pos(self, ent, x, y):
+        ent = self.get_entity(ent)
+        ent['x'] = x
+        ent['y'] = y
 
     def set_zone(self, ent, zone, *, x = None, y = None):
         ent = self.get_entity(ent)
@@ -229,6 +258,7 @@ class JEState:
             "invincible": False,
             "energy": 100,
             "energy_max": 100,
+            "data": {}, #storage for custom variables
             "weight": 0.5, # physical mass of the entity
             "container_weight": 0, # total weight of all items currently held in container
             "weight_limit": 10, # limit for the total weight this container can carry
