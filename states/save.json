@@ -1,7 +1,6 @@
 {
     "variables": {
-        "focus": "player",
-        "fps_limit": 60
+        "focus": "player"
     },
     "zones": [
         {
@@ -9,9 +8,8 @@
             "name": "The Bar",
             "description": "DEFAULT_DESCRIPTION",
             "contains": [
-                "player",
-                "pistol",
-                "target_dummy"
+                "target_dummy",
+                "bar_out_exit"
             ],
             "type": "zone",
             "events": {},
@@ -1106,31 +1104,62 @@
                     ]
                 ]
             ]
+        },
+        {
+            "tag": "the_street",
+            "name": "The Streets",
+            "description": "DEFAULT_DESCRIPTION",
+            "contains": [
+                "bar_entr",
+                "player"
+            ],
+            "type": "zone",
+            "events": {},
+            "map": []
         }
     ],
     "entities": [
         {
             "tag": "player",
             "x": 3,
-            "y": 5,
+            "y": 3,
+            "move_queue": [],
+            "spr_moving": false,
             "screen_x": 96,
-            "screen_y": 160,
-            "name": "DEFAULT_NAME",
+            "screen_y": 96,
+            "name": "The Player",
             "description": "DEFAULT_DESCRIPTION",
-            "contains": [],
+            "contains": [
+                "pistol",
+                "medkit"
+            ],
             "properties": [],
-            "location": "the_bar",
+            "location": "the_street",
             "type": "entity",
             "events": {},
             "sprite": "player",
             "direction": "r",
             "solid": true,
             "hidden": false,
+            "dt": 0,
+            "skills": {
+                "weapons": 0,
+                "perception": 0,
+                "strength": 0,
+                "armour": 0,
+                "hacking": 0,
+                "agility": 0,
+                "dexterity": 0
+            },
             "health": 100,
             "health_max": 100,
             "invincible": false,
             "energy": 100,
             "energy_max": 100,
+            "data": {},
+            "weight": 0.5,
+            "container_weight": 2,
+            "weight_limit": 10,
             "alliance": "player",
             "alliances": {
                 "generic": 0
@@ -1139,26 +1168,94 @@
         },
         {
             "tag": "pistol",
-            "x": 6,
-            "y": 6,
+            "x": -1,
+            "y": -1,
+            "move_queue": [],
+            "spr_moving": false,
             "screen_x": 192,
             "screen_y": 192,
-            "name": "Pistol",
-            "description": "DEFAULT_DESCRIPTION",
+            "name": "9mm Pistol",
+            "description": "A basic old-world pistol, barely<br>functional.",
             "contains": [],
-            "properties": [],
-            "location": "the_bar",
+            "properties": [
+                "inventory",
+                "combat"
+            ],
+            "location": "player",
             "type": "entity",
             "events": {},
             "sprite": "circle",
             "direction": "d",
             "solid": false,
             "hidden": false,
+            "dt": 0,
+            "skills": {
+                "weapons": 0,
+                "perception": 0,
+                "strength": 0,
+                "armour": 0,
+                "hacking": 0,
+                "agility": 0,
+                "dexterity": 0
+            },
             "health": 100,
             "health_max": 100,
             "invincible": false,
             "energy": 100,
             "energy_max": 100,
+            "data": {},
+            "weight": 1,
+            "container_weight": 0,
+            "weight_limit": 10,
+            "alliance": "generic",
+            "alliances": {
+                "generic": 0
+            },
+            "barks": {},
+            "slot": "weapon"
+        },
+        {
+            "tag": "medkit",
+            "x": -1,
+            "y": -1,
+            "move_queue": [],
+            "spr_moving": false,
+            "screen_x": 224,
+            "screen_y": 192,
+            "name": "Medkit",
+            "description": "A set of medical supplies.",
+            "contains": [],
+            "properties": [
+                "inventory"
+            ],
+            "location": "player",
+            "type": "entity",
+            "events": {
+                "use": "use_item"
+            },
+            "sprite": "circle",
+            "direction": "d",
+            "solid": false,
+            "hidden": false,
+            "dt": 0,
+            "skills": {
+                "weapons": 0,
+                "perception": 0,
+                "strength": 0,
+                "armour": 0,
+                "hacking": 0,
+                "agility": 0,
+                "dexterity": 0
+            },
+            "health": 100,
+            "health_max": 100,
+            "invincible": false,
+            "energy": 100,
+            "energy_max": 100,
+            "data": {},
+            "weight": 1,
+            "container_weight": 0,
+            "weight_limit": 10,
             "alliance": "generic",
             "alliances": {
                 "generic": 0
@@ -1169,6 +1266,8 @@
             "tag": "target_dummy",
             "x": 2,
             "y": 6,
+            "move_queue": [],
+            "spr_moving": false,
             "screen_x": 64,
             "screen_y": 192,
             "name": "target dummy",
@@ -1182,11 +1281,25 @@
             "direction": "d",
             "solid": true,
             "hidden": false,
+            "dt": 0,
+            "skills": {
+                "weapons": 0,
+                "perception": 0,
+                "strength": 0,
+                "armour": 0,
+                "hacking": 0,
+                "agility": 0,
+                "dexterity": 0
+            },
             "health": 100,
             "health_max": 100,
             "invincible": false,
             "energy": 100,
             "energy_max": 100,
+            "data": {},
+            "weight": 0.5,
+            "container_weight": 0,
+            "weight_limit": 10,
             "alliance": "generic",
             "alliances": {
                 "generic": 0,
@@ -1199,6 +1312,118 @@
                     "This is a very long message that will hopefully be split properly in the message history, idk tho."
                 ]
             }
+        },
+        {
+            "tag": "bar_out_exit",
+            "x": 7,
+            "y": 0,
+            "move_queue": [],
+            "spr_moving": false,
+            "screen_x": 224,
+            "screen_y": 0,
+            "name": "Exit to street",
+            "description": "DEFAULT_DESCRIPTION",
+            "contains": [],
+            "properties": [],
+            "location": "the_bar",
+            "type": "entity",
+            "events": {
+                "on_player": [
+                    "teleport"
+                ]
+            },
+            "sprite": "circle",
+            "direction": "d",
+            "solid": false,
+            "hidden": false,
+            "dt": 0,
+            "skills": {
+                "weapons": 0,
+                "perception": 0,
+                "strength": 0,
+                "armour": 0,
+                "hacking": 0,
+                "agility": 0,
+                "dexterity": 0
+            },
+            "health": 100,
+            "health_max": 100,
+            "invincible": false,
+            "energy": 100,
+            "energy_max": 100,
+            "data": {
+                "exit": {
+                    "map": "the_street",
+                    "pos": [
+                        2,
+                        2
+                    ]
+                }
+            },
+            "weight": 0.5,
+            "container_weight": 0,
+            "weight_limit": 10,
+            "alliance": "generic",
+            "alliances": {
+                "generic": 0
+            },
+            "barks": {}
+        },
+        {
+            "tag": "bar_entr",
+            "x": 7,
+            "y": 0,
+            "move_queue": [],
+            "spr_moving": false,
+            "screen_x": 224,
+            "screen_y": 0,
+            "name": "To Bar",
+            "description": "DEFAULT_DESCRIPTION",
+            "contains": [],
+            "properties": [],
+            "location": "the_street",
+            "type": "entity",
+            "events": {
+                "on_player": [
+                    "teleport"
+                ]
+            },
+            "sprite": "circle",
+            "direction": "d",
+            "solid": false,
+            "hidden": false,
+            "dt": 0,
+            "skills": {
+                "weapons": 0,
+                "perception": 0,
+                "strength": 0,
+                "armour": 0,
+                "hacking": 0,
+                "agility": 0,
+                "dexterity": 0
+            },
+            "health": 100,
+            "health_max": 100,
+            "invincible": false,
+            "energy": 100,
+            "energy_max": 100,
+            "data": {
+                "exit": {
+                    "map": "the_bar",
+                    "pos": [
+                        7,
+                        1
+                    ]
+                }
+            },
+            "weight": 0.5,
+            "container_weight": 0,
+            "weight_limit": 10,
+            "alliance": "generic",
+            "alliances": {
+                "generic": 0
+            },
+            "barks": {}
         }
     ]
 }

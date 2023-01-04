@@ -29,6 +29,7 @@ class World:
 
 
         f = self._entity(tag="target_dummy", sprite="circle", x=2, y=6, name="target dummy")
+        f["ai_scripts"]["field"] = ["l", "r"]
         self.set_hostility("target_dummy", "player", -1)
         f["barks"]["bump"] = ["Hey!", "Watch it!", "This is a very long message that will hopefully be split properly in the message history, idk tho."]
         self.set_zone("target_dummy", "the_bar")

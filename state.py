@@ -9,10 +9,27 @@ class JEState:
         print(f"teleport {exit_point}")
         self.set_zone(self.player, exit_point['map'])
         self.set_pos(self.player, exit_point['pos'][0], exit_point['pos'][1])
-    def init_events(self):
-        self.events = {
+
+    def new_turn(self, **args):
+        z = self.active_zone_object
+        for ent in z['contains']:
+            entobj = self.get_entity(ent)
+            self.trigger_event(entobj, "new_turn", **args)
+            print("new turn for", ent)
+            self.next_step(entobj)
+
+    def next_step(self, ent):
+        ent = self.get_entity(ent)
+        if len(ent['ai_scripts']['field']) > 0:
+            if self.move_entity(ent, ent['ai_scripts']['field'][0]):
+                ent['ai_scripts']['field'].append(ent['ai_scripts']['field'][0])
+                del ent['ai_scripts']['field'][0]
+
+    def init_globals(self):
+        self.global_functions = {
             "pickup_item": self.pickup_item,
-            "teleport": self.teleport
+            "teleport": self.teleport,
+            "new_turn": self.new_turn
         }
     
     def set_event(self, obj, event_type, event):
@@ -20,13 +37,16 @@ class JEState:
         if obj['events'].get(event_type, None) == None: obj['events'][event_type] = []
         obj['events'][event_type].append(event)
 
+    def trigger_global(self, global_name, **payload):
+        if self.global_functions.get(global_name, None):
+            self.global_functions[global_name](**payload)
+
     def trigger_event(self, obj, event_type, **payload):
         obj = self.get_entity(obj)
         if obj['events'].get(event_type, None) == None: return
         for evt in obj['events'][event_type]:
-            if self.events.get(evt, None):
-                payload["source"] = obj
-                self.events[evt](**payload)
+            payload["source"] = obj
+            self.trigger_global(evt, **payload)
 
     def save_state(self, name = "save"):
         data = self.export_state()
@@ -79,7 +99,7 @@ class JEState:
             self.log(f"{target['name']}: {random.choice(barks)}")
             return True
 
-    def move_entity(self, e, d):
+    def move_entity(self, e, d) -> bool:
         e = self.get_entity(e)
 
         #@todo finish this
@@ -110,36 +130,44 @@ class JEState:
                 if len(collisions) > 0:
                     if e == self.player_object and not self.collided(e, collisions[0]): 
                         self.log(f"! You bumped in to {collisions[0]['name']}")
+                        return False
                 else:
                     if e["y"] > 0:
                         e["y"] -= 1
+                        return True
 
             if d == "d":
                 collisions = self.collisions_at(e["x"], e["y"]+1)
                 if len(collisions) > 0:
                     if e == self.player_object and not self.collided(e, collisions[0]): 
                         self.log(f"! You bumped in to {collisions[0]['name']}")
+                        return False
                 else:
                     if e["y"] < self.field_size:
                         e["y"] += 1
+                        return True
 
             if d == "r":
                 collisions = self.collisions_at(e["x"]+1, e["y"])
                 if len(collisions) > 0:
                     if e == self.player_object and not self.collided(e, collisions[0]): 
                         self.log(f"! You bumped in to {collisions[0]['name']}")
+                        return False
                 else:
                     if e["x"] < self.field_size:
                         e["x"] += 1
+                        return True
 
             if d == "l":
                 collisions = self.collisions_at(e["x"]-1, e["y"])
                 if len(collisions) > 0:
                     if e == self.player_object and not self.collided(e, collisions[0]): 
                         self.log(f"! You bumped in to {collisions[0]['name']}")
+                        return False
                 else:
                     if e["x"] > 0:
                         e["x"] -= 1
+                        return True
 
     def collisions_at(self, x, y):
         out = []
@@ -174,6 +202,8 @@ class JEState:
                             self.trigger_event(item, "pickup_item")
 
                     self.trigger_event(item, "on_player")
+            self.trigger_global("new_turn")
+
 
     def set_pos(self, ent, x, y):
         ent = self.get_entity(ent)
@@ -253,6 +283,26 @@ class JEState:
             "direction": "d", # u, d, l, r
             "solid": True, # can entities walk through it or not
             "hidden": False, # will it display in the field
+            "dt": 0, # for  characters, current delay in combat. for items, delay that is added when used
+            "skills": {
+                "weapons": 0,
+                "perception": 0,
+                "strength": 0,
+                "armour": 0,
+                "hacking": 0,
+                "agility": 0,
+                "dexterity": 0
+            },
+            "equipment": { # to define slots fully later
+                "head": "",
+                "body": "",
+                "hands": ""
+            },
+            "ai_scripts": {
+                "field": [],
+                "combat": []
+            },
+            "state": "idle",
             "health": 100,
             "health_max": 100,
             "invincible": False,
@@ -272,6 +322,14 @@ class JEState:
         self.entities.append(o)
         return o
 
+    def get_skill_level(self, obj, skill):
+        obj = self.get_entity(obj)
+        return obj['skills'][skill]
+
+    def edit_skill_level(self, obj, skill, value:int):
+        obj = self.get_entity(obj)
+        obj['skills'][skill] = int(value)
+        
     def _zone(self, **args):
         o = {
             "tag": "", 

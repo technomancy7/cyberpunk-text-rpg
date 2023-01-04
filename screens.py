@@ -114,11 +114,12 @@ class JEScreens:
                 colour = self.ttext4
 
             sym = "*"
-            symbols = ["$", "!", "@", "#", "?"]
+            symbols = ["$", "!", "@", "#", "?", "+", "-"]
             for s in symbols:
                 if msg.startswith(f"{s} "): 
                     sym = s
                     msg = msg[2:]
+                    
             self.write_text(5, loc, f"{sym} {msg}", size=log_size, colour=colour)
             loc -= log_size
             current += 1
@@ -170,10 +171,10 @@ class JEScreens:
 
                         if(self.status_screen == "stats"): 
                             num_ents += 1
-                            l = f"{entity['x']}x{entity['y']}"
-                            l = f"{entity['x']*self.tile_size}x{entity['y']*self.tile_size} / {entity['screen_x']}x{entity['screen_y']}"
+                            #l = f"{entity['x']}x{entity['y']}"
+                            #l = f"{entity['x']*self.tile_size}x{entity['y']*self.tile_size} / {entity['screen_x']}x{entity['screen_y']}"
                         
-                            self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['name']} ({l})")
+                            self.write_bmp(text_col, 20+num_ents, f"{num_ents}: {entity['name']}")
 
         # Border around the field
         pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 1)
@@ -190,9 +191,15 @@ class JEScreens:
             self.write_bmp(text_col, 8, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
             self.write_bmp(text_col, 9, f"Weight: {wgt} ({player['container_weight']}/{player['weight_limit']})")
 
+            ln = 9
+
+            for skill, level in player['skills'].items():
+                ln += 1
+                self.write_bmp(text_col, ln, f"* {skill.title()}: {level}")
+
             if self.variables.get("debug", False):
-                self.write_bmp(text_col, 10, f"FPS: {int(self.clock.get_fps())}")
-                self.write_bmp(text_col, 11, f"POS: {precise_cursor}")
+                self.write_bmp(text_col, 5, f"FPS: {int(self.clock.get_fps())}")
+                self.write_bmp(text_col, 6, f"Mouse POS: {precise_cursor}")
 
         if self.status_screen == "inventory":
             self.write_bmp(text_col+2, 2, f" < (S)")

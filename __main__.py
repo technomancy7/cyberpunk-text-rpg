@@ -120,10 +120,15 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.entities   = []
         self.zones      = []
         
+        self.combat_data = {
+            "entities": [], #list of entities participating in the current combat scene
+            "turns": 0, #current number of turns
+        }
+
         self.selected_inventory = ""
         self.inventory_menu_labels = []
 
-        self.init_events()
+        self.init_globals()
         
         # Global deltatime
         self.dt         = 0.0
@@ -221,10 +226,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.screen.blit(image, (x, y), (source_x, source_y, width, height))
 
     def can_input(self) -> bool:
-        if self.input_disabled: return False
-        if self.current_scene == self.main_scene: return True
-        if self.current_scene == self.fullscreen_terminal_scene: return True
-        return False
+        return not self.input_disabled
 
     def is_field_visible(self) -> bool:
         if self.current_scene == self.main_scene: return True
@@ -347,13 +349,16 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         bottom_left     = 55
         bottom_right    = 65
         
+        def null_cb(**args):
+            print(f"No callback defined yet. {args}")
+
         if "equip" in item['properties']:
             self.inventory_menu_labels.append("Equip")
             self.mouse_zones.append({"top_left": top_left,      "top_right": top_right,
                                     "bottom_left": bottom_left, "bottom_right": bottom_right,
                                     "group": "inventory",
                                     "button": 1,                "payload": {"item": item},
-                                    "callback": lambda x: print(f"Equip {name}")})
+                                    "callback": null_cb})
             bottom_left     += modify_by
             bottom_right    += modify_by
 
@@ -363,7 +368,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                                     "bottom_left": bottom_left, "bottom_right": bottom_right,
                                     "group": "inventory",
                                     "button": 1,                "payload": {"item": item},
-                                    "callback": lambda x: print(f"Drop {name}")})
+                                    "callback": null_cb})
 
             bottom_left     += modify_by
             bottom_right    += modify_by

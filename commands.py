@@ -6,7 +6,15 @@ class JECommand:
 
         if cmd == "quit":
                 exit()
-            
+        
+        if cmd == "setskill":
+            if self.variables.get("debug", False) == True:
+                skill = args_raw[0]
+                if not args_raw[1].isdigit():
+                    return self.log("! Invalid option: value must be a number.")
+                value = int(args_raw[1])
+                self.player_object["skills"][skill] = value
+
         if cmd == "save":
                 save_name = args or "save"
                 #self.log(f"! Saving to {save_name}.json")
