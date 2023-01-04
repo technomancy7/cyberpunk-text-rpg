@@ -1,6 +1,13 @@
 import json, os, random
 
 class JEState:
+    def init_globals(self):
+        self.global_functions = {
+            "pickup_item": self.pickup_item,
+            "teleport": self.teleport,
+            "new_turn": self.new_turn
+        }
+        
     def pickup_item(self, **args):
         print(f"pickup {args}")
 
@@ -15,7 +22,6 @@ class JEState:
         for ent in z['contains']:
             entobj = self.get_entity(ent)
             self.trigger_event(entobj, "new_turn", **args)
-            print("new turn for", ent)
             self.next_step(entobj)
 
     def next_step(self, ent):
@@ -24,13 +30,6 @@ class JEState:
             if self.move_entity(ent, ent['ai_scripts']['field'][0]):
                 ent['ai_scripts']['field'].append(ent['ai_scripts']['field'][0])
                 del ent['ai_scripts']['field'][0]
-
-    def init_globals(self):
-        self.global_functions = {
-            "pickup_item": self.pickup_item,
-            "teleport": self.teleport,
-            "new_turn": self.new_turn
-        }
     
     def set_event(self, obj, event_type, event):
         obj = self.get_entity(obj)
@@ -104,6 +103,12 @@ class JEState:
 
         #@todo finish this
         #@todo once implemented, add a switch to use tank controls
+
+        # special: move toward a target
+        # requires a target in entity['data']['target']
+        if d == "toward_target":
+            pass
+
         # forward, backward, strafe right, straight left
         # moves in directions relative to direction
         # does not rotate
