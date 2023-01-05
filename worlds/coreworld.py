@@ -30,15 +30,16 @@ class World:
 
         f = self._entity(tag="target_dummy", sprite="circle", x=2, y=6, name="target dummy")
         f["ai_scripts"]["field"] = ["l", "r"]
-        self.set_hostility("target_dummy", "player", -1)
+        self.set_hostility(f, "player", -1)
         f["barks"]["bump"] = ["Hey!", "Watch it!", "This is a very long message that will hopefully be split properly in the message history, idk tho."]
-        self.set_zone("target_dummy", "the_bar")
-
+        self.set_zone(f, "the_bar")
+        self.set_event(f, "bumped", "start_combat")
         
         ep = self._entity(tag="bar_out_exit", sprite="circle", x=7, y=0, name="Exit to street", solid=False)
         ep['data']['exit'] = {"map": "the_street", "pos": [2, 2]}
         self.set_zone("bar_out_exit", "the_bar")
         self.set_event(ep, "on_player", "teleport")
+        
 
         for x in range(11):
             for y in range(11):

@@ -1,11 +1,38 @@
 import json, os, random
 
 class JEState:
+    def start_combat(self, *entities):
+        #entities.append(self.player)
+        self.combat_data['entities'] = entities
+        self.combat_data["turns"] = 0
+        self.combat_data['active'] = True
+
+        for ent in entities:
+            e = self.get_entity(ent)
+            #print("combat", e)
+            e['dt'] = random.randint(e['skills']["agility"], e['skills']["agility"] + random.randint(1, 10))
+
+    def end_combat(self, *, pause = False):
+        self.combat_data["active"] = False
+        if not pause:
+            for ent in self.combat_data['entities']:
+                e = self.get_entity(ent)
+                e['dt'] = 0
+
+            self.combat_data["turns"] = 0    
+            self.combat_data['entities'] = []
+
+    def global_start_combat(self, **args):
+        print("GLOBAL COMBAT START")
+        #print(args)
+        #@todo pull in both player and targets squad
+        self.start_combat(*[self.player, args['target']])
     def init_globals(self):
         self.global_functions = {
             "pickup_item": self.pickup_item,
             "teleport": self.teleport,
-            "new_turn": self.new_turn
+            "new_turn": self.new_turn,
+            "start_combat": self.global_start_combat
         }
         
     def pickup_item(self, **args):
@@ -88,7 +115,7 @@ class JEState:
             if entity["tag"] == tag: return entity
 
     def collided(self, mover, target, direction = "u"):
-        self.trigger_event(target, "bumped", mover=mover, direction=direction)
+        self.trigger_event(target, "bumped", mover=mover, direction=direction, target=target)
         return self.bark(target, "bump")
 
     def bark(self, target, group = "ambient"):
@@ -97,6 +124,7 @@ class JEState:
         if len(barks) > 0:
             self.log(f"{target['name']}: {random.choice(barks)}")
             return True
+        return False
 
     def move_entity(self, e, d) -> bool:
         e = self.get_entity(e)
@@ -313,6 +341,7 @@ class JEState:
             "invincible": False,
             "energy": 100,
             "energy_max": 100,
+            "squad": [], #tags allies to bring in to combat with them
             "data": {}, #storage for custom variables
             "weight": 0.5, # physical mass of the entity
             "container_weight": 0, # total weight of all items currently held in container

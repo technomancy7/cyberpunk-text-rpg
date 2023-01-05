@@ -5,6 +5,9 @@ class JEScreens:
         self.buttons = []
         self.current_scene = self.fullscreen_terminal_scene
 
+    def button_move_player(self, d):
+        if not self.combat_data["active"]:
+            self.move_player(d)
 
     def switch_to_main_scene(self):
         self.current_scene = self.main_scene
@@ -13,25 +16,25 @@ class JEScreens:
                 "pos": [12, 9], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond", 
-                "on_click": lambda: self.move_player("u")
+                "on_click": lambda: self.button_move_player("u")
             }, 
             {
                 "pos": [11, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.move_player("l")
+                "on_click": lambda: self.button_move_player("l")
             },
             {
                 "pos": [12, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.move_player("d")
+                "on_click": lambda: self.button_move_player("d")
             },
             {
                 "pos": [13, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.move_player("r")
+                "on_click": lambda: self.button_move_player("r")
             },
         ]
 
@@ -129,7 +132,7 @@ class JEScreens:
 
         # field display            
         text_col = 45
-
+        
         if player == None: 
             print("ERROR: PLAYER NOT FOUND")
         else:
@@ -144,7 +147,8 @@ class JEScreens:
                         self.draw_arbitrary(xy, spr)
 
                 num_ents = 0
-                if(self.status_screen == "stats"): self.write_bmp(text_col, 20, f"Entities in this zone:")
+                if not self.combat_data["active"] and self.status_screen == "stats": 
+                    self.write_bmp(text_col, 20, f"Entities in this zone:")
 
 
                 for entity in self.entities:
@@ -169,7 +173,7 @@ class JEScreens:
                             entity["spr_moving"] = False
                         self.draw_entity_precise(entity)
 
-                        if(self.status_screen == "stats"): 
+                        if(self.status_screen == "stats" and not self.combat_data["active"]):
                             num_ents += 1
                             #l = f"{entity['x']}x{entity['y']}"
                             #l = f"{entity['x']*self.tile_size}x{entity['y']*self.tile_size} / {entity['screen_x']}x{entity['screen_y']}"
@@ -179,8 +183,14 @@ class JEScreens:
         # Border around the field
         pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 1)
 
+        if self.combat_data["active"]:
+            i = 7
+            for ent in self.combat_data["entities"]:
+                ent = self.get_entity(ent)
+                self.write_bmp(text_col, i, f"{ent['name']} ({ent['dt']})")
+                i += 1
 
-        if self.status_screen == "stats":
+        elif self.status_screen == "stats":
             self.write_bmp(text_col+22, 2, f" (I) >")
             self.write_bmp(text_col+10, 2, " -- Stats --")
             # Get health and energy values as percentage
@@ -201,7 +211,7 @@ class JEScreens:
                 self.write_bmp(text_col, 5, f"FPS: {int(self.clock.get_fps())}")
                 self.write_bmp(text_col, 6, f"Mouse POS: {precise_cursor}")
 
-        if self.status_screen == "inventory":
+        elif self.status_screen == "inventory":
             self.write_bmp(text_col+2, 2, f" < (S)")
             self.write_bmp(text_col+8, 2, " -- Inventory --")
             wgt = 100*(player['container_weight']/player['weight_limit'])

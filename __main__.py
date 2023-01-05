@@ -123,6 +123,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.combat_data = {
             "entities": [], #list of entities participating in the current combat scene
             "turns": 0, #current number of turns
+            "active": False, #is combat currently active, can be turned off to pause a battle
         }
 
         self.selected_inventory = ""
@@ -428,7 +429,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                     return
                 return
 
-            if self.current_scene == self.main_scene and event.scancode == 58:
+            battle = self.combat_data["active"]     
+            if not battle and self.current_scene == self.main_scene and event.scancode == 58:
                 self.switch_to_fst()
                 return
             
@@ -440,7 +442,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
             if self.current_scene == self.main_scene and event.key == 9:
                 self.selected_console = not self.selected_console
 
-            if self.current_scene == self.main_scene and event.scancode == 59:
+            if not battle and self.current_scene == self.main_scene and event.scancode == 59:
                 if self.status_screen == "stats":
                     self.switch_status_scene("inventory")
                     
@@ -468,18 +470,19 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                     self.refresh_text_input()
 
             else:
-                player = self.player_object
-                if event.unicode == "w" or event.scancode == 82:
-                    self.move_player("u")
-                        
-                if event.unicode == "s" or event.scancode == 81:
-                    self.move_player("d")
+                #player = self.player_object
+                if not battle:
+                    if event.unicode == "w" or event.scancode == 82:
+                        self.move_player("u")
+                            
+                    if event.unicode == "s" or event.scancode == 81:
+                        self.move_player("d")
 
-                if event.unicode == "a" or event.scancode == 80:
-                    self.move_player("l")
+                    if event.unicode == "a" or event.scancode == 80:
+                        self.move_player("l")
 
-                if event.unicode == "d" or event.scancode == 79:
-                    self.move_player("r")
+                    if event.unicode == "d" or event.scancode == 79:
+                        self.move_player("r")
 
     def global_timer(self):
         # called every second (roughly)
