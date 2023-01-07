@@ -403,10 +403,31 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         bottom_right    = 65
         
         def null_cb(**args):
-            print(f"No callback defined yet. {args}")
+            print(f"No callback defined yet.")
+            print(f"{json.dumps(args, indent=4)}")
 
-        if "equip" in item['properties']:
+        if "use" in item['events'].keys():
+            self.inventory_menu_labels.append("Use")
+            self.mouse_zones.append({"top_left": top_left,      "top_right": top_right,
+                                    "bottom_left": bottom_left, "bottom_right": bottom_right,
+                                    "group": "inventory",
+                                    "button": 1,                "payload": {"item": item},
+                                    "callback": null_cb})
+            bottom_left     += modify_by
+            bottom_right    += modify_by
+
+        if "equip" in item['properties']: #@todo when equipment is implemented, rewrite this logic
             self.inventory_menu_labels.append("Equip")
+            self.mouse_zones.append({"top_left": top_left,      "top_right": top_right,
+                                    "bottom_left": bottom_left, "bottom_right": bottom_right,
+                                    "group": "inventory",
+                                    "button": 1,                "payload": {"item": item},
+                                    "callback": null_cb})
+            bottom_left     += modify_by
+            bottom_right    += modify_by
+
+        if "equipped" in item['properties']: #@todo rewrite to check equipment on player
+            self.inventory_menu_labels.append("Unequip")
             self.mouse_zones.append({"top_left": top_left,      "top_right": top_right,
                                     "bottom_left": bottom_left, "bottom_right": bottom_right,
                                     "group": "inventory",

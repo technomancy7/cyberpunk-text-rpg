@@ -289,6 +289,9 @@ class JEScreens:
                 out.append(s.strip())
                 return out
 
+
+
+
             tsize = 40
             rect = (40, 200, 550, 200)
             rect_sender = (45, 175, 205, 40)

@@ -53,6 +53,3 @@ class World:
         self.set_event(ep2, "on_player", "teleport")
 
         self.add_goal(tag="tutorial", message="Beat up the training dummy.")
-        #print(self.goals)
-        #self.edit_goal("tutorial", active=False)
-        #print(self.goals)
