@@ -183,6 +183,21 @@ class JEScreens:
         # Border around the field
         pygame.draw.rect(self.screen, (125,255,255), (0, 0, height, height), 1)
 
+        lbl_s = "stats"
+        lbl_i = "inventory"
+        lbl_g = "goals"
+        if precise_cursor[0] > 370 and precise_cursor[0] < 422:
+            if precise_cursor[1] > 8 and precise_cursor[1] < 25:
+                lbl_s = lbl_s.upper()
+
+        if precise_cursor[0] > 424 and precise_cursor[0] < 512:
+            if precise_cursor[1] > 8 and precise_cursor[1] < 25:
+                lbl_i = lbl_i.upper()
+
+        if precise_cursor[0] > 530 and precise_cursor[0] < 582:
+            if precise_cursor[1] > 8 and precise_cursor[1] < 25:
+                lbl_g = lbl_g.upper()  
+
         if self.combat_data["active"]:
             i = 7
             for ent in self.combat_data["entities"]:
@@ -191,13 +206,8 @@ class JEScreens:
                 i += 1
 
         elif self.status_screen == "stats":
-            s = "stats"
-            i = "inventory"
-            g = "goals"
-            if precise_cursor[0] > 370 and precise_cursor[0] < 422:
-                if precise_cursor[1] > 8 and precise_cursor[1] < 15:
-                    s = s.upper()
-            self.write_bmp(text_col, 1, f" [{s}] [{i}] [{g}]]")
+            lbl_s = lbl_s.upper()
+            self.write_bmp(text_col, 1, f" [{lbl_s}] [{lbl_i}] [{lbl_g}]")
             self.write_bmp(text_col+10, 2, " -- Stats --")
 
             # Get health and energy values as percentage
@@ -220,7 +230,8 @@ class JEScreens:
                 self.write_bmp(text_col, 6, f"Mouse POS: {precise_cursor}")
 
         elif self.status_screen == "goals":
-            self.write_bmp(text_col, 1, f" [stats] [inventory] [goals]")
+            lbl_g = lbl_g.upper()
+            self.write_bmp(text_col, 1, f" [{lbl_s}] [{lbl_i}] [{lbl_g}]")
             self.write_bmp(text_col+10, 2, " -- Goals --")
             
             gi = 5
@@ -232,8 +243,8 @@ class JEScreens:
                     gi += 1
 
         elif self.status_screen == "inventory":
-            
-            self.write_bmp(text_col, 1, f" [stats] [inventory] [goals]")
+            lbl_i = lbl_i.upper()
+            self.write_bmp(text_col, 1, f" [{lbl_s}] [{lbl_i}] [{lbl_g}]")
             self.write_bmp(text_col+8, 2, " -- Inventory --")
             wgt = 100*(player['container_weight']/player['weight_limit'])
             self.write_bmp(text_col, 5, f"Weight: {wgt} ({player['container_weight']}/{player['weight_limit']})")

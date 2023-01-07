@@ -154,7 +154,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         if(autobuild_world): self.build_world()
 
         self.mouse_zones.append({"top_left": 370,      "top_right": 422,
-                        "bottom_left": 8, "bottom_right": 15,
+                        "bottom_left": 8, "bottom_right": 25,
                         "group": "status_ui",
                         "button": 1,                "payload": {"status": "stats"},
                         "callback": self.core_mz_callback})
@@ -380,9 +380,9 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                 px = event.pos[0]
                 py = event.pos[1]
                 if px > mz["top_left"] and px < mz['top_right'] and py > mz['bottom_left'] and py < mz['bottom_right']:
-                    print(event.button == mz['button'], event.button, mz['button'])
+                    #print(event.button == mz['button'], event.button, mz['button'])
                     if event.button == mz['button']:
-                        print(f"{event.pos} is inside {mz}")
+                        #print(f"{event.pos} is inside {mz}")
                         mz['callback'](**mz['payload'])
 
     def purge_mz(self, grp):
