@@ -27,6 +27,7 @@ class JEState:
         #print(args)
         #@todo pull in both player and targets squad
         self.start_combat(*[self.player, args['target']])
+        
     def init_globals(self):
         self.global_functions = {
             "pickup_item": self.pickup_item,
@@ -74,6 +75,9 @@ class JEState:
             payload["source"] = obj
             self.trigger_global(evt, **payload)
 
+    def quicksave(self):
+        self.save_state("quick")
+        
     def save_state(self, name = "save"):
         data = self.export_state()
         with open(self.app_path+"states/"+name+".json", "w+") as f:   

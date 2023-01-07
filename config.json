@@ -1,4 +1,8 @@
 {
     "winsize": [640, 480],
-    "autoclose_prompt": false
+    "autoclose_prompt": false,
+    "auto":{
+        "debug": true
+
+    }
 }

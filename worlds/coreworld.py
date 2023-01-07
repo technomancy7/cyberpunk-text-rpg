@@ -5,9 +5,7 @@ class World:
         # Build the default world
 
         # Refresh world state
-        self.variables = {}
-        self.entities = []
-        self.zones = []
+        self.refresh_state()
 
         # SETUP PLAYER
         self.player = "player"
@@ -53,3 +51,8 @@ class World:
         ep2['data']['exit'] = {"map": "the_bar", "pos": [7, 1]}
         self.set_zone("bar_entr", "the_street")
         self.set_event(ep2, "on_player", "teleport")
+
+        self.add_goal(tag="tutorial", message="Beat up the training dummy.")
+        #print(self.goals)
+        #self.edit_goal("tutorial", active=False)
+        #print(self.goals)

@@ -191,12 +191,14 @@ class JEScreens:
                 i += 1
 
         elif self.status_screen == "stats":
-            self.write_bmp(text_col+22, 2, f" (I) >")
+            self.write_bmp(text_col, 1, f" [stats] [inventory] [goals]")
             self.write_bmp(text_col+10, 2, " -- Stats --")
+
             # Get health and energy values as percentage
             hp = 100*(player['health']/player['health_max'])
             ep = 100*(player['energy']/player['energy_max'])
             wgt = 100*(player['container_weight']/player['weight_limit'])
+
             self.write_bmp(text_col, 7, f"Health: {hp}% ({player['health']}/{player['health_max']})")
             self.write_bmp(text_col, 8, f"Energy: {ep}% ({player['energy']}/{player['energy_max']})")
             self.write_bmp(text_col, 9, f"Weight: {wgt} ({player['container_weight']}/{player['weight_limit']})")
@@ -211,15 +213,27 @@ class JEScreens:
                 self.write_bmp(text_col, 5, f"FPS: {int(self.clock.get_fps())}")
                 self.write_bmp(text_col, 6, f"Mouse POS: {precise_cursor}")
 
+        elif self.status_screen == "goals":
+            self.write_bmp(text_col, 1, f" [stats] [inventory] [goals]")
+            self.write_bmp(text_col+10, 2, " -- Goals --")
+            
+            gi = 5
+            for goal in self.goals:
+                if goal['active']:
+                    msg = f"{goal['message']}"
+                    if goal['completed']: msg += f" (DONE)"
+                    self.write_bmp(text_col, gi, f"* {msg}")
+                    gi += 1
+
         elif self.status_screen == "inventory":
-            self.write_bmp(text_col+2, 2, f" < (S)")
+            self.write_bmp(text_col, 1, f" [stats] [inventory] [goals]")
             self.write_bmp(text_col+8, 2, " -- Inventory --")
             wgt = 100*(player['container_weight']/player['weight_limit'])
             self.write_bmp(text_col, 5, f"Weight: {wgt} ({player['container_weight']}/{player['weight_limit']})")
             i = 7
             for item in player["contains"]:
                 en = self.get_entity(item)
-                #xy = self.tile_to_screen([text_col, i])
+
                 if en['tag'] == self.selected_inventory:
                     self.write_bmp(text_col, i, f"> {i-7}. {en['name']}")
                 else:

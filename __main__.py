@@ -102,6 +102,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         # load system config
         with open(f"{self.app_path}config.json", "r+") as f:
             self.cfg = json.load(f)
+            
         
         # load and set the logo and set title name
         #logo = pygame.image.load("logo32x32.png")
@@ -116,9 +117,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
 
 
         # State values
-        self.variables  = {}
-        self.entities   = []
-        self.zones      = []
+        self.refresh_state()
         
         self.combat_data = {
             "entities": [], #list of entities participating in the current combat scene
@@ -150,8 +149,61 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.dialog_stack       = []
         self.dialog_msg_proxy   = ""
 
+        self.goals = []
         # build the default world
         if(autobuild_world): self.build_world()
+
+        self.mouse_zones.append({"top_left": 370,      "top_right": 422,
+                        "bottom_left": 8, "bottom_right": 15,
+                        "group": "status_ui",
+                        "button": 1,                "payload": {"status": "stats"},
+                        "callback": self.core_mz_callback})
+
+
+        self.mouse_zones.append({"top_left": 424,      "top_right": 512,
+                        "bottom_left": 8, "bottom_right": 25,
+                        "group": "status_ui",
+                        "button": 1,                "payload": {"status": "inventory"},
+                        "callback": self.core_mz_callback})
+
+        self.mouse_zones.append({"top_left": 530,      "top_right": 582,
+                        "bottom_left": 8, "bottom_right": 25,
+                        "group": "status_ui",
+                        "button": 1,                "payload": {"status": "goals"},
+                        "callback": self.core_mz_callback})                
+
+    def refresh_state(self):
+        self.variables  = {}
+        self.entities   = []
+        self.zones      = []
+        self.variables.update(self.cfg.get("auto", {}))
+
+    def add_goal(self, tag, message, **opts):
+        if not self.has_goal(tag):
+            goal = {"tag": tag, "message": message, "completed": False, "active": True, "stage": 0}
+            goal.update(**opts)
+            self.goals.append(goal)
+            self.log("New goal added.")
+            self.log(" = = = = =")
+            self.log(f"{message}")
+            self.log(" = = = = =")
+
+    def edit_goal(self, tag, **opt):
+        g = self.get_goal(tag)
+        if g != None:
+            g.update(**opt)
+
+    def get_goal(self, tag):
+        for goal in self.goals:
+            if goal['tag'] == tag:
+                return goal
+        return None
+
+    def has_goal(self, tag):
+        for goal in self.goals:
+            if goal['tag'] == tag:
+                return True
+        return False
 
     def screen_to_tile(self, xy):
         real_x = int(xy[0] / self.tile_size)
@@ -403,21 +455,9 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
     def switch_status_scene(self, status):
         print(f"Activating status screen {status}")
         self.status_screen = status
-        self.purge_mz("status_ui")
-        #self.mouse_zones[f"status_{status}"] = []
-        if status == "stats":
-            self.mouse_zones.append({"top_left": 540,      "top_right": 585,
-                            "bottom_left": 15, "bottom_right": 25,
-                            "group": "status_ui",
-                            "button": 1,                "payload": {"status": "inventory"},
-                            "callback": self.core_mz_callback})
-                            
+
         if status == "inventory": #build mouse zones for each inventory item
-            self.mouse_zones.append({"top_left": 380,      "top_right": 425,
-                            "bottom_left": 15, "bottom_right": 25,
-                            "group": "status_ui",
-                            "button": 1,                "payload": {"status": "stats"},
-                            "callback": self.core_mz_callback})
+
             self.update_inventory_mousezones()
             
     

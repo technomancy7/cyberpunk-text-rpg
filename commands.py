@@ -7,6 +7,30 @@ class JECommand:
         if cmd == "quit":
                 exit()
         
+        if cmd == "addgoal":
+            if self.variables.get("debug", False) == True:
+                self.add_goal(args_raw[0], " ".join(args_raw[1:]))
+
+        if cmd == "completegoal":
+            if self.variables.get("debug", False) == True:
+                if self.has_goal(args_raw[0]):
+                    self.edit_goal(args_raw[0], completed=True)
+
+        if cmd == "uncompletegoal":
+            if self.variables.get("debug", False) == True:
+                if self.has_goal(args_raw[0]):
+                    self.edit_goal(args_raw[0], completed=False)
+
+        if cmd == "activategoal":
+            if self.variables.get("debug", False) == True:
+                if self.has_goal(args_raw[0]):
+                    self.edit_goal(args_raw[0], active=True)
+
+        if cmd == "deactivategoal":
+            if self.variables.get("debug", False) == True:
+                if self.has_goal(args_raw[0]):
+                    self.edit_goal(args_raw[0], active=False)
+
         if cmd == "setskill":
             if self.variables.get("debug", False) == True:
                 skill = args_raw[0]
