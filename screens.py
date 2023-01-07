@@ -191,7 +191,13 @@ class JEScreens:
                 i += 1
 
         elif self.status_screen == "stats":
-            self.write_bmp(text_col, 1, f" [stats] [inventory] [goals]")
+            s = "stats"
+            i = "inventory"
+            g = "goals"
+            if precise_cursor[0] > 370 and precise_cursor[0] < 422:
+                if precise_cursor[1] > 8 and precise_cursor[1] < 15:
+                    s = s.upper()
+            self.write_bmp(text_col, 1, f" [{s}] [{i}] [{g}]]")
             self.write_bmp(text_col+10, 2, " -- Stats --")
 
             # Get health and energy values as percentage
@@ -226,6 +232,7 @@ class JEScreens:
                     gi += 1
 
         elif self.status_screen == "inventory":
+            
             self.write_bmp(text_col, 1, f" [stats] [inventory] [goals]")
             self.write_bmp(text_col+8, 2, " -- Inventory --")
             wgt = 100*(player['container_weight']/player['weight_limit'])
@@ -255,12 +262,6 @@ class JEScreens:
                         start += 20
                 else:
                     self.write_text(360, start, f"{desc}", size=12, colour=(255, 255, 255))
-
-            """for mz in self.mouse_zones:
-                px = precise_cursor[0]
-                py = precise_cursor[1]
-                if px > mz["top_left"] and px < mz['top_right'] and py > mz['bottom_left'] and py < mz['bottom_right']:
-                    print(f"{precise_cursor} is inside {mz}")"""
 
         for button in self.buttons:
             xy = button["pos"]
