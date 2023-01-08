@@ -45,13 +45,14 @@ except:
 #import pygame.base
 
 # Import engine modules
-import state, screens, commands, gui
+import state, screens, commands, gui, templates, etos
 
 world_name = "coreworld" #@todo command line argument to swap out world
 world = importlib.import_module("worlds."+world_name)
 #import coreworld as world
 
-class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, world.World):
+class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, templates.JETemplates, 
+            world.World, etos.EternalTerminal):
     def __init__(self, *, autobuild_world = False):
         # initialize the pygame module
         pygame.init()
@@ -129,7 +130,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.inventory_menu_labels = []
 
         self.init_globals()
-        
+
         # Global deltatime
         self.dt         = 0.0
         self.raw_ticks  = 0
@@ -140,6 +141,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         # containers for the text input system
         self.text_buffer        = []
         self.text_input_ln      = ""
+        self.text_input_history = []
+        self.text_input_pointer = 0
         self.msg_history        = []
         self.msg_history_proxy  = []
         self.log_size_limit     = 45
@@ -176,11 +179,13 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
         self.variables  = {}
         self.entities   = []
         self.zones      = []
+        self.virtual_fs = []
         self.variables.update(self.cfg.get("auto", {}))
 
     def add_goal(self, tag, message, **opts):
         if not self.has_goal(tag):
-            goal = {"tag": tag, "message": message, "completed": False, "active": True, "stage": 0}
+            #@todo in goals list, sort by tier
+            goal = {"tag": tag, "message": message, "completed": False, "active": True, "stage": 0, "tier": 0}
             goal.update(**opts)
             self.goals.append(goal)
             self.log("New goal added.")
@@ -500,17 +505,29 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                 self.switch_to_main_scene()
                 return
 
-            if self.current_scene == self.main_scene and event.key == 9:
+            if not battle and self.current_scene == self.main_scene and event.scancode == 59:
                 self.selected_console = not self.selected_console
 
-            if not battle and self.current_scene == self.main_scene and event.scancode == 59:
-                if self.status_screen == "stats":
-                    self.switch_status_scene("inventory")
-                    
-                elif self.status_screen == "inventory":
-                    self.switch_status_scene("stats")
-
             if self.selected_console or self.current_scene == self.fullscreen_terminal_scene:
+                print(event)
+                if self.current_scene == self.main_scene and event.key == 9:
+                    pass #@todo autocomplete here
+                
+                if event.scancode == 82:
+                    self.text_input_pointer += 1
+                    if self.text_input_pointer >= len(self.text_input_history):
+                        self.text_input_pointer = len(self.text_input_history)
+                    
+                    self.text_input_ln = self.text_input_history[-self.text_input_pointer]
+
+                if event.scancode == 81:
+                    self.text_input_pointer -= 1     
+                    if self.text_input_pointer <= 0:
+                        self.text_input_pointer = 0
+                        self.text_input_ln = ""
+                    else:
+                        self.text_input_ln = self.text_input_history[-self.text_input_pointer]
+                    
                 if event.key == 13:
                     current_cmd = self.text_input_ln
                     if current_cmd != "":
@@ -520,6 +537,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, worl
                         self.parse_command(current_cmd)
                         if self.cfg.get("autoclose_prompt", False):
                             self.selected_console = False
+                        self.text_input_history.append(current_cmd)
 
                 if(event.unicode):
                     if event.key != 13 and event.key != 9 and event.key != 8:

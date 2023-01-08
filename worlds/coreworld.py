@@ -6,7 +6,7 @@ class World:
 
         # Refresh world state
         self.refresh_state()
-
+        self.init_etos()
         # SETUP PLAYER
         self.player = "player"
         self._entity(tag="player", sprite="player", x=2, y=2, alliance="player", name="The Player")

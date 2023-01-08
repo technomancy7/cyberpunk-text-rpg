@@ -2,7 +2,8 @@ import json, os, random
 
 class JEState:
     def start_combat(self, *entities):
-        #entities.append(self.player)
+        #@todo sort the entities array by lowest DT
+        #@todo get recoloured bmp font so that enemies and allies can be identified in the list
         self.combat_data['entities'] = entities
         self.combat_data["turns"] = 0
         self.combat_data['active'] = True
@@ -77,7 +78,7 @@ class JEState:
 
     def quicksave(self):
         self.save_state("quick")
-        
+
     def save_state(self, name = "save"):
         data = self.export_state()
         with open(self.app_path+"states/"+name+".json", "w+") as f:   
@@ -88,7 +89,8 @@ class JEState:
         output = {
             "variables": self.variables,
             "zones": self.zones,
-            "entities": self.entities
+            "entities": self.entities,
+            "virtual_fs": self.virtual_fs
         }
         return output
 
@@ -106,6 +108,7 @@ class JEState:
             self.entities = data.get("entities", [])
             self.zones = data.get("zones", [])
             self.variables = data.get("variables", {})
+            self.virtual_fs = data.get("virtal_fs", {})
             self.log(f"! State loaded from {name}.json")
 
     def get_zone(self, tag):
@@ -300,66 +303,6 @@ class JEState:
     def is_friendly(self, e1, e2):
         return self.get_hostility(e1, e2) == 1
 
-    def _entity(self, **args):
-        o = {
-            "tag": "", #tag or ID to track tis object
-            "x": 0, # tile position
-            "y": 0,
-            "move_queue": [],
-            "spr_moving": False,
-            "screen_x": 0, # precise screen position
-            "screen_y": 0,
-            "name": "DEFAULT_NAME", 
-            "description": "DEFAULT_DESCRIPTION", 
-            "contains": [], #inventory
-            "properties": [], #keyword to relate to perks, augmentations, abilities, etc, this ent has
-            "location": "", # zone tag that this ent exists in, or entity tag if is in inventory
-            "type": "entity",
-            "events": {}, # table of events
-            "sprite": None,
-            "direction": "d", # u, d, l, r
-            "solid": True, # can entities walk through it or not
-            "hidden": False, # will it display in the field
-            "dt": 0, # for  characters, current delay in combat. for items, delay that is added when used
-            "skills": {
-                "weapons": 0,
-                "perception": 0,
-                "strength": 0,
-                "armour": 0,
-                "hacking": 0,
-                "agility": 0,
-                "dexterity": 0
-            },
-            "equipment": { # to define slots fully later
-                "head": "",
-                "body": "",
-                "hands": ""
-            },
-            "ai_scripts": {
-                "field": [],
-                "combat": []
-            },
-            "state": "idle",
-            "health": 100,
-            "health_max": 100,
-            "invincible": False,
-            "energy": 100,
-            "energy_max": 100,
-            "squad": [], #tags allies to bring in to combat with them
-            "data": {}, #storage for custom variables
-            "weight": 0.5, # physical mass of the entity
-            "container_weight": 0, # total weight of all items currently held in container
-            "weight_limit": 10, # limit for the total weight this container can carry
-            "alliance": "generic", # allianced tag
-            "alliances": {
-                "generic": 0
-            },
-            "barks": {},
-        }
-        o.update(**args)
-        self.entities.append(o)
-        return o
-
     def get_skill_level(self, obj, skill):
         obj = self.get_entity(obj)
         return obj['skills'][skill]
@@ -368,21 +311,3 @@ class JEState:
         obj = self.get_entity(obj)
         obj['skills'][skill] = int(value)
         
-    def _zone(self, **args):
-        o = {
-            "tag": "", 
-            "name": "DEFAULT_NAME", 
-            "description": "DEFAULT_DESCRIPTION", 
-            "contains": [], 
-            "type": "zone",
-            "events": {},
-            "map": [
-                #{"loc": [0,0], "tiles": []}
-            ]
-        }
-
-
-
-        o.update(**args)
-        self.zones.append(o)
-        return o
