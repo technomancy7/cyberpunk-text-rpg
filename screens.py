@@ -51,7 +51,7 @@ class JEScreens:
         log_size = text_input_size-5
         loc = self.cfg["winsize"][1]-text_input_size-log_size
 
-        for msg in reversed(self.msg_history):
+        for msg in reversed(self.msg_history_proxy):
             colour = (255, 255, 255)
 
             sym = "*"

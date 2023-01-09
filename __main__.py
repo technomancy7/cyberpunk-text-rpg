@@ -67,7 +67,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         self.mouse_zones = []
 
         self.current_scene = None
-        self.switch_to_main_scene()
+        #self.switch_to_main_scene()
+        self.switch_to_fst()
         self.cfg = {}
         self.selected_console = False
         #self.status_screen = "stats"
@@ -104,7 +105,6 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         with open(f"{self.app_path}config.json", "r+") as f:
             self.cfg = json.load(f)
             
-        
         # load and set the logo and set title name
         #logo = pygame.image.load("logo32x32.png")
         #pygame.display.set_icon(logo)
@@ -175,6 +175,16 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
                         "button": 1,                "payload": {"status": "goals"},
                         "callback": self.core_mz_callback})                
 
+        self.terminal_prompt = None
+
+    def save_config(self):
+        with open(f"{self.app_path}config.json", "w+") as f:
+            json.dump(self.cfg, f, indent=4)
+
+    def wait_for_reply(self, fn):
+        self.terminal_prompt = fn
+
+    
     def refresh_state(self):
         self.variables  = {}
         self.entities   = []
@@ -453,8 +463,9 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
             bottom_right    += modify_by
 
     def update_inventory_mousezones(self):
+        # keep track and build the clickable zones of the UI for each item in the inventory
         self.purge_mz("inventory")
-        modify_by       = 10
+        modify_by       = 8
         top_left        = 385
         top_right       = 520
         bottom_left     = 55
@@ -486,7 +497,32 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
 
             self.update_inventory_mousezones()
             
-    
+
+    def get_input(self, code, default_key = None):
+        r = self.cfg.get("keybinds", {}).get(code, None)
+        if r == None:
+            self.cfg["keybinds"][code] = default_key
+            self.save_config()
+            return default_key
+        else:
+            return r
+
+    def key_trigger(self, code, key, default_key = None):
+        i = self.get_input(code, default_key)
+        print("input get", i)
+        if i:
+            if type(i) == str:
+                print("code", pygame.key.key_code(i))
+                return int(pygame.key.key_code(i)) == key
+
+            if type(i) == list:
+                for k in i:
+                    print("code", pygame.key.key_code(k))
+                    if int(pygame.key.key_code(k)) == key:
+                        return True
+
+        return False
+
     def handle_key_down(self, event):
         # keyboard input
         if self.can_input(): # if user can press buttons right now
@@ -496,31 +532,45 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
                 return
 
             battle = self.combat_data["active"]     
-            if not battle and self.current_scene == self.main_scene and event.scancode == 58:
-                self.switch_to_fst()
-                return
-            
-            
-            if self.current_scene == self.fullscreen_terminal_scene and event.scancode == 58:
-                self.switch_to_main_scene()
-                return
+            if self.key_trigger("toggle fullscreen terminal", event.key, "f1") and not battle:
+                if self.current_scene == self.main_scene:
+                    self.switch_to_fst()
+                    return
+                
+                if self.current_scene == self.fullscreen_terminal_scene:
+                    self.switch_to_main_scene()
+                    return
 
-            if not battle and self.current_scene == self.main_scene and event.scancode == 59:
-                self.selected_console = not self.selected_console
+            if not battle and self.current_scene == self.main_scene:
+                if self.key_trigger("toggle input focus", event.key, "f2"):
+                    self.selected_console = not self.selected_console
+
+            if not self.selected_console:
+                if self.key_trigger("focus input", event.key, "t"):
+                    self.selected_console = True
+                    return
 
             if self.selected_console or self.current_scene == self.fullscreen_terminal_scene:
-                print(event)
-                if self.current_scene == self.main_scene and event.key == 9:
+                if self.key_trigger("unfocus input", event.key, "escape"):
+                    self.selected_console = False
+                    return
+
+                if self.key_trigger("autocomplete", event.key, "tab"):
+                    print("autocomplete")
+                    ac = self.cfg.get("autocomplete", [])
                     pass #@todo autocomplete here
                 
-                if event.scancode == 82:
+                if event.scancode == 82: #up key
+                    if len(self.text_input_history) == 0: return
+
                     self.text_input_pointer += 1
                     if self.text_input_pointer >= len(self.text_input_history):
                         self.text_input_pointer = len(self.text_input_history)
                     
                     self.text_input_ln = self.text_input_history[-self.text_input_pointer]
 
-                if event.scancode == 81:
+                if event.scancode == 81: #down key
+                    if len(self.text_input_history) == 0: return
                     self.text_input_pointer -= 1     
                     if self.text_input_pointer <= 0:
                         self.text_input_pointer = 0
@@ -528,7 +578,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
                     else:
                         self.text_input_ln = self.text_input_history[-self.text_input_pointer]
                     
-                if event.key == 13:
+                if self.key_trigger("send input", event.key, "return"):
                     current_cmd = self.text_input_ln
                     if current_cmd != "":
                         self.text_buffer.clear()
@@ -544,23 +594,24 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
                         self.text_buffer.append(event.unicode)
                         self.refresh_text_input()
 
-                if event.key == 8:
+                if self.key_trigger("backspace", event.key, "backspace"):
+                    if len(self.text_buffer) == 0: return
                     self.text_buffer.pop()
                     self.refresh_text_input()
 
             else:
                 #player = self.player_object
                 if not battle:
-                    if event.unicode == "w" or event.scancode == 82:
+                    if self.key_trigger("move up", event.key, ["up", "w"]):
                         self.move_player("u")
                             
-                    if event.unicode == "s" or event.scancode == 81:
+                    if self.key_trigger("move down", event.key, ["down", "s"]):
                         self.move_player("d")
 
-                    if event.unicode == "a" or event.scancode == 80:
+                    if self.key_trigger("move left", event.key, ["left", "a"]):
                         self.move_player("l")
 
-                    if event.unicode == "d" or event.scancode == 79:
+                    if self.key_trigger("move right", event.key, ["right", "d"]):
                         self.move_player("r")
 
     def global_timer(self):
@@ -590,6 +641,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         for k, v in self.ticks.items():
             v(self.dt, dt)
 
+    def new_generic_event(self, name):    
+        self.global_functions[name] = pygame.USEREVENT+len(self.global_functions.keys())
 
     def loop(self):
         # main loop
@@ -606,6 +659,9 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.handle_mouse_down(event)
+
+                if event.type == self.global_functions["intro"]:
+                    self.intro_scene()
             
             
             self.current_scene()

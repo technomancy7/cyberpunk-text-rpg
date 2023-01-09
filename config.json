@@ -1,8 +1,38 @@
 {
-    "winsize": [640, 480],
+    "winsize": [
+        640,
+        480
+    ],
     "autoclose_prompt": false,
-    "auto":{
+    "auto": {
         "debug": true
-
+    },
+    "keybinds": {
+        "send_input": [
+            "return"
+        ],
+        "autocomplete": "tab",
+        "backspace": "backspace",
+        "move up": [
+            "up",
+            "w"
+        ],
+        "move down": [
+            "down",
+            "s"
+        ],
+        "move left": [
+            "left",
+            "a"
+        ],
+        "move right": [
+            "right",
+            "d"
+        ],
+        "toggle fullscreen terminal": "f1",
+        "toggle input focus": "f2",
+        "focus input": "t",
+        "unfocus input": "escape",
+        "send input": "return"
     }
 }

@@ -8,7 +8,11 @@ class EternalTerminal:
         self._etos_new_file(name="notes", ftype="dir"),
         self._etos_new_file(name="$STATS", ftype="system", location="/system/etos/")
         self._etos_new_file(name="$GOALS", ftype="system", location="/system/etos/")
-
+        self._etos_new_file(name="ETOS_SYS", ftype="system", location="/system/")
+        self._etos_new_file(name="WORLD", ftype="system", location="/system/")
+        self._etos_new_file(name="SELF", ftype="system", location="/system/")
+        self._etos_new_file(name="INTERFACE", ftype="system", location="/system/")
+        self._etos_new_file(name="PERCEPTION", ftype="system", location="/system/")
         print(self.virtual_fs)
 
 

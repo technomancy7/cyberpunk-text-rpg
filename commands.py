@@ -1,11 +1,21 @@
 class JECommand:
     def parse_command(self, ln):
+        if self.terminal_prompt != None:
+            self.terminal_prompt(ln)
+            return
+
         cmd = ln.split(" ")[0]
         args_raw = ln.split(" ")[1:]
         args = " ".join(args_raw)
 
         if cmd == "quit":
                 exit()
+        
+        if cmd == "rebind":
+            pass #use prompts to get input for code to edit, then take input
+
+        if cmd == "testkey":
+            pass #print name of key pressed
         
         if cmd == "addgoal":
             if self.variables.get("debug", False) == True:

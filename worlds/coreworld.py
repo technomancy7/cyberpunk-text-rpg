@@ -1,3 +1,4 @@
+import pygame
 
 class World:
     def build_world(self):
@@ -24,6 +25,12 @@ class World:
             properties=["inventory"], weight=1, events={"use": "use_item"},
             description="A set of medical supplies.")
         self.set_zone("medkit", "the_bar", x=7, y=6)
+
+        for junk in range(0, 5):
+            f = self._entity(tag=f"junk_{junk}", sprite="circle", x=0, y=3+junk, name="Junk", solid=False, 
+            properties=["inventory"], weight=1, events={"use": "use_item"},
+            description="Some junk.")
+            self.set_zone(f"junk_{junk}", "the_bar")
 
 
         f = self._entity(tag="target_dummy", sprite="circle", x=2, y=6, name="target dummy")
@@ -52,4 +59,53 @@ class World:
         self.set_zone("bar_entr", "the_street")
         self.set_event(ep2, "on_player", "teleport")
 
-        self.add_goal(tag="tutorial", message="Beat up the training dummy.")
+        #
+
+        self.new_generic_event("intro")
+        pygame.time.set_timer(self.global_functions["intro"], 1000, 1)
+        self.variables["progress"] = 0
+
+    def intro_scene(self):
+        if self.variables['progress'] == 0:
+            self.log("! DETECTED ETOS [ACTIVATE] SIGNAL")
+            pygame.time.set_timer(self.global_functions["intro"], 1000, 1)
+            self.variables['progress'] = 1
+
+        elif self.variables['progress'] == 1:
+            self.log("! Scanning filesystem...")
+            self.log("! Connected to databases [ETOS_SYS, SELF, WORLD, PERCEPTION, INTERFACE]...")
+            self.log("! Validating system files...")
+            self.log("! Enabling neural input...")
+            pygame.time.set_timer(self.global_functions["intro"], 2000, 1)
+            self.variables['progress'] = 2
+
+        elif self.variables['progress'] == 2:
+            self.log("! ERROR: Profile data was corrupt, factory reset required.")
+            self.log("? Would you like to create a new profile, or attempt to load existing?")
+            self.log("Valid responses: new, load, quit")
+            #pygame.time.set_timer(self.global_functions["intro"], 1000, 1)
+            self.wait_for_reply(self.intro_scene_prompt)
+
+        elif self.variables['progress'] == 3:
+            self.log("? What is your name?")
+            self.variables['progress'] = 4
+            self.wait_for_reply(self.intro_scene_prompt)
+
+    def intro_scene_prompt(self, ln):
+        if self.variables['progress'] <= 3 and ln == ".":
+            self.switch_to_main_scene()
+
+        if self.variables['progress'] == 2 and ln == "new":
+            self.log("Creating new profile...")
+            self.variables['progress'] = 3
+            pygame.time.set_timer(self.global_functions["intro"], 1000, 1)
+            self.wait_for_reply(None)
+        
+        if self.variables['progress'] == 4:
+            self.player_object["name"] = ln
+            self.log(f"Name: {self.player_object['name']}")
+            self.log(f"Setup complete. (Full setup not yet implemented.)")
+            self.log("Activating field screen...")
+            self.switch_to_main_scene()
+            self.wait_for_reply(None)
+            self.add_goal(tag="tutorial", message="Beat up the training dummy.")
