@@ -102,7 +102,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         self.ttext4 = [125, 125, 125]
 
         self.rebind_keyname = ""
-        self.unbinding = False
+        self.unbinding = ""
         self.appending_bind = False
         self.print_key = False
 
@@ -303,10 +303,6 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
     def can_input(self) -> bool:
         return not self.input_disabled
 
-    def is_field_visible(self) -> bool:
-        if self.current_scene == self.main_scene: return True
-        return False
-
     def write_text(self, x, y, text, *, fontfile = "", sysfont = "", size = 30, colour=(255, 255, 255)):
         # pick a font you have and set its size
         myfont = None
@@ -325,31 +321,6 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
 
         # put the label object on the screen at point
         self.screen.blit(label, (x, y))
-        
-    def set_bg(self, colour, speed = None):
-        if speed: self.bg_shift_speed = speed
-        self._proxy_bg_colour = colour
-
-    def shift_bg(self, speed = None):
-        if speed: self.bg_shift_speed = speed
-        
-        if self.bg_colour[0] < self._proxy_bg_colour[0]:
-            self.bg_colour[0] += self.bg_shift_speed
-
-        if self.bg_colour[0] > self._proxy_bg_colour[0]:
-            self.bg_colour[0] -= self.bg_shift_speed
-
-        if self.bg_colour[1] < self._proxy_bg_colour[1]:
-            self.bg_colour[1] += self.bg_shift_speed
-
-        if self.bg_colour[1] > self._proxy_bg_colour[1]:
-            self.bg_colour[1] -= self.bg_shift_speed
-
-        if self.bg_colour[2] < self._proxy_bg_colour[2]:
-            self.bg_colour[2] += self.bg_shift_speed
-
-        if self.bg_colour[2] > self._proxy_bg_colour[2]:
-            self.bg_colour[2] -= self.bg_shift_speed
 
     @property
     def active_zone(self):
@@ -375,14 +346,6 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         self.variables["focus"] = new_player
         self._player = self.get_entity(new_player)
         print("player updated...", new_player)
-
-    def switch_status_scene(self, status):
-        print(f"Activating status screen {status}")
-        self.status_screen = status
-
-        if status == "inventory": #build mouse zones for each inventory item
-
-            self.update_inventory_mousezones()
 
     def global_timer(self):
         # called every second (roughly)

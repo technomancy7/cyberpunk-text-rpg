@@ -120,7 +120,7 @@ class JEIO:
         if args.get("status"):
             new_status = args["status"]
             self.switch_status_scene(new_status)
-    
+
     def get_input(self, code, default_key = None):
         r = self.cfg.get("keybinds", {}).get(code, None)
         if r == None:
@@ -147,22 +147,22 @@ class JEIO:
 
         return False
     
-    def unbind_key(self, key, command = None):
+    def unbind_key(self, command, key = None):
         i = self.get_input(command)
 
-        if type(i) == str or i == None:
-            if command == None:
-                self.cfg["keybinds"][command] = None
+        if type(i) == str:
+            if key == None:
+                del self.cfg["keybinds"][command]
                 self.save_config()
             else:
                 if self.cfg["keybinds"][command] == key:
-                    self.cfg["keybinds"][command] = None
+                    del self.cfg["keybinds"][command]
                     self.save_config()
 
         if type(i) == list:
             if key in i:
                 self.cfg["keybinds"][command].remove(key)
-                if len(self.cfg["keybinds"][command] == 1):
+                if len(self.cfg["keybinds"][command]) == 1:
                     self.cfg["keybinds"][command] = self.cfg["keybinds"][command][0]
                 self.save_config()
 
@@ -197,17 +197,32 @@ class JEIO:
             self.bind_key(keyname, self.rebind_keyname, self.appending_bind)
             self.rebind_keyname = ""
             self.appending_bind = False
+            return
 
         if self.unbinding != "":
             keyname = pygame.key.name(event.key)
-            i = self.get_input(keyname)
-
+            i = self.unbinding
+            if keyname in self.get_input(i):
+                print(f"Unbind {keyname} // {i}")
+                self.unbind_key(i, keyname)
+            else:
+                print("Invalid unbind")
+            
+            self.unbinding = ""
+            return
+            
         # keyboard input
         if self.can_input(): # if user can press buttons right now
             if len(self.dialog_stack) > 0:
                 if self.proceed_dialog():
                     return
                 return
+
+            for cmd in self.commands.keys():
+                if self.key_trigger(cmd, event.key):
+                    print("Executed", cmd)
+                    #df = self.variables.get("")
+                    self.commands[cmd]("")
 
             battle = self.combat_data["active"]     
             if self.key_trigger("toggle fullscreen terminal", event.key, "f1") and not battle:

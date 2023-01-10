@@ -31,6 +31,7 @@
         "toggle input focus": "f2",
         "focus input": "t",
         "unfocus input": "escape",
-        "send input": "return"
+        "send input": "return",
+        "quit": "f12"
     }
 }

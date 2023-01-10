@@ -332,3 +332,40 @@ class JEScreens:
                 else:
                     self.write_text(520, 380, f"[Confirm]", size=10, colour=(255, 255, 255))
 
+
+    def set_bg(self, colour, speed = None):
+        if speed: self.bg_shift_speed = speed
+        self._proxy_bg_colour = colour
+
+    def shift_bg(self, speed = None):
+        if speed: self.bg_shift_speed = speed
+        
+        if self.bg_colour[0] < self._proxy_bg_colour[0]:
+            self.bg_colour[0] += self.bg_shift_speed
+
+        if self.bg_colour[0] > self._proxy_bg_colour[0]:
+            self.bg_colour[0] -= self.bg_shift_speed
+
+        if self.bg_colour[1] < self._proxy_bg_colour[1]:
+            self.bg_colour[1] += self.bg_shift_speed
+
+        if self.bg_colour[1] > self._proxy_bg_colour[1]:
+            self.bg_colour[1] -= self.bg_shift_speed
+
+        if self.bg_colour[2] < self._proxy_bg_colour[2]:
+            self.bg_colour[2] += self.bg_shift_speed
+
+        if self.bg_colour[2] > self._proxy_bg_colour[2]:
+            self.bg_colour[2] -= self.bg_shift_speed
+            
+    def is_field_visible(self) -> bool:
+        if self.current_scene == self.main_scene: return True
+        return False
+
+    def switch_status_scene(self, status):
+        print(f"Activating status screen {status}")
+        self.status_screen = status
+
+        if status == "inventory": #build mouse zones for each inventory item
+
+            self.update_inventory_mousezones()

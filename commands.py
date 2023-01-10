@@ -11,11 +11,6 @@ class JECommand:
         self.unbind_keyname = ln
         self.wait_for_reply(None)
 
-    def init_commands(self):
-        self.commands = {
-            "quit": lambda ln: exit()
-        }
-
     #@todo when commands have been moved to the dict
     # have support for binding keys to arbitrary commands
     # method is same, in rebind command, you can use either a key code like currently
@@ -33,50 +28,59 @@ class JECommand:
         if self.commands.get(cmd, None):
             self.commands[cmd](" ".join(args_raw))
         
-        if cmd == "rebind" or cmd == "bindkey":
+    def init_commands(self):
+        def rebind(ln):
             self.log("? Press the key you wish to bind this command to.")
-            self.rebind_keyname = args
+            self.rebind_keyname = ln
 
-        if cmd == "addbind":
+        def addbind(ln):
             self.log("? Press the key you wish to bind this command to.")
-            self.rebind_keyname = args
+            self.rebind_keyname = ln
             self.appending_bind = True
 
-        if cmd == "unbind":
-            self.log("? Press the key you wish to unbind.")
-            self.unbinding = args
-            #self.wait_for_reply(self.get_unbinding_prompt)
+        def unbind(ln):
+            if type(self.get_input(ln))== str:
+                self.unbind_key(ln)
+            else:
+                self.log("? Press the key you wish to unbind.")
+                self.unbinding = ln
 
-        if cmd == "testkey":
+        def testkey(ln):
             print("Testing key")
             self.print_key = True
             self.log("Press a key to get it's name.")
         
-        if cmd == "addgoal":
+        def addgoal(ln):
+            args_raw = ln.split(" ")
             if self.variables.get("debug", False) == True:
                 self.add_goal(args_raw[0], " ".join(args_raw[1:]))
 
-        if cmd == "completegoal":
+        def completegoal(ln):
+            args_raw = ln.split(" ")
             if self.variables.get("debug", False) == True:
                 if self.has_goal(args_raw[0]):
                     self.edit_goal(args_raw[0], completed=True)
 
-        if cmd == "uncompletegoal":
+        def uncompletegoal(ln):
+            args_raw = ln.split(" ")
             if self.variables.get("debug", False) == True:
                 if self.has_goal(args_raw[0]):
                     self.edit_goal(args_raw[0], completed=False)
 
-        if cmd == "activategoal":
+        def activategoal(ln):
+            args_raw = ln.split(" ")
             if self.variables.get("debug", False) == True:
                 if self.has_goal(args_raw[0]):
                     self.edit_goal(args_raw[0], active=True)
 
-        if cmd == "deactivategoal":
+        def deactivategoal(ln):
+            args_raw = ln.split(" ")
             if self.variables.get("debug", False) == True:
                 if self.has_goal(args_raw[0]):
                     self.edit_goal(args_raw[0], active=False)
 
-        if cmd == "setskill":
+        def setskill(ln):
+            args_raw = ln.split(" ")
             if self.variables.get("debug", False) == True:
                 skill = args_raw[0]
                 if not args_raw[1].isdigit():
@@ -84,36 +88,34 @@ class JECommand:
                 value = int(args_raw[1])
                 self.player_object["skills"][skill] = value
 
-        if cmd == "save":
-            args = " ".join(args_raw)
-            save_name = args or "save"
+        def save(ln):
+            save_name = ln or "save"
             #self.log(f"! Saving to {save_name}.json")
             self.save_state(save_name)
 
-        if cmd == "load":
-            args = " ".join(args_raw)
-            save_name = args or "save"
+        def load(ln):
+            save_name = ln or "save"
             #self.log(f"! Loading {save_name}.json")
             self.load_state(save_name)
 
-        if cmd == "walk":
+        def walk(ln):
+            args_raw = ln.split(" ")
             for step in args_raw:
                 self.log("You moved "+step)
                 self.move_player(step)
 
-        if cmd == "diag":
-            self.push_dialog("Player", f"{args}")
+        def diag(ln):
+            self.push_dialog("Player", f"{ln}")
 
-        if cmd == "say":
+        def say(ln):
             player = self.get_entity(self.player)
-            self.log(f"{player['tag']} says: {args}")
+            self.log(f"{player['tag']} says: {ln}")
 
-        if cmd == "get":
-            args = " ".join(args_raw)
-            if "." not in args:
+        def get(ln):
+            if "." not in ln:
                 return self.log("Invalid cmd format.")
-            target = args.split(".")[0]
-            param = args.split(".")[1]
+            target = ln.split(".")[0]
+            param = ln.split(".")[1]
             if target.lower() == "world":
                 self.log(f"world.{param} = {self.variables.get(param, None)}")
             else:
@@ -121,14 +123,13 @@ class JECommand:
                 val = ent[param]
                 self.log(f"{ent['tag']}.{param} = {val} ({type(val)})")
 
-        if cmd == "set":
-            args = " ".join(args_raw)
-            if "." not in args:
+        def _set(ln):
+            if "." not in ln:
                 return self.log("Invalid cmd format.")
 
             # player.health 1
-            target = args.split(".")[0] # player
-            param = ".".join(args.split(".")[1:]) # health 1
+            target = ln.split(".")[0] # player
+            param = ".".join(ln.split(".")[1:]) # health 1
             val = param.split(" ")[0] # health
             param = " ".join(param.split(" ")[1:]) # 1
 
@@ -168,8 +169,8 @@ class JECommand:
 
                 self.log(f"{target}.{val} = {param} ({type(param)})")
 
-        if cmd == "bg":
-            a = args_raw
+        def bg(ln):
+            a = ln.split(" ")
             if len(a) == 3:
                 print("bg [", a, "]")
                 a = [int(element) for element in a]
@@ -177,3 +178,25 @@ class JECommand:
                 self.log("bg changed.")
             else:
                 self.log("Invalid colour code.")
+
+        self.commands = {
+            "quit": lambda ln: exit(),
+            "bg": bg,
+            "set": _set,
+            "get": get,
+            "say": say,
+            "diag": diag,
+            "walk": walk,
+            "save": save,
+            "load": load,
+            "setskill": setskill,
+            "deactivategoal": deactivategoal,
+            "activategoal": activategoal,
+            "completegoal": completegoal,
+            "uncompletegoal": uncompletegoal,
+            "addgoal": addgoal,
+            "testkey": testkey,
+            "rebind": rebind,
+            "addbind": addbind,
+            "unbind": unbind
+        }
