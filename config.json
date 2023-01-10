@@ -4,13 +4,11 @@
         480
     ],
     "autoclose_prompt": false,
+    "skip_intro": true,
     "auto": {
         "debug": true
     },
     "keybinds": {
-        "send_input": [
-            "return"
-        ],
         "autocomplete": "tab",
         "backspace": "backspace",
         "move up": [

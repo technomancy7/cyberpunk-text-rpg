@@ -61,9 +61,14 @@ class World:
 
         #
 
-        self.new_generic_event("intro")
-        pygame.time.set_timer(self.global_functions["intro"], 1000, 1)
-        self.variables["progress"] = 0
+        if self.cfg.get("skip_intro", False) == True:
+            self.variables['progress'] = 4
+            self.switch_to_main_scene()
+            self.add_goal(tag="tutorial", message="Beat up the training dummy.")
+        else:
+            self.new_generic_event("intro")
+            pygame.time.set_timer(self.global_functions["intro"], 1000, 1)
+            self.variables["progress"] = 0
 
     def intro_scene(self):
         if self.variables['progress'] == 0:
@@ -92,9 +97,6 @@ class World:
             self.wait_for_reply(self.intro_scene_prompt)
 
     def intro_scene_prompt(self, ln):
-        if self.variables['progress'] <= 3 and ln == ".":
-            self.switch_to_main_scene()
-
         if self.variables['progress'] == 2 and ln == "new":
             self.log("Creating new profile...")
             self.variables['progress'] = 3
