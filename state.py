@@ -67,6 +67,7 @@ class JEState:
 
     def trigger_global(self, global_name, **payload):
         if self.global_functions.get(global_name, None):
+            payload['state'] = self
             self.global_functions[global_name](**payload)
 
     def trigger_event(self, obj, event_type, **payload):

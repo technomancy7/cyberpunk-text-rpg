@@ -174,7 +174,7 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
                         "callback": self.core_mz_callback})
 
 
-        self.mouse_zones.append({"top_left": 424,      "top_right": 512,
+        self.mouse_zones.append({"top_left": 438,      "top_right": 512,
                         "bottom_left": 8, "bottom_right": 25,
                         "group": "status_ui",
                         "button": 1,                "payload": {"status": "inventory"},

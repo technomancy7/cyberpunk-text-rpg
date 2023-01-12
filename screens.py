@@ -21,7 +21,7 @@ class JEScreens:
                     "pos": [11, 0], 
                     "spr": "diamond_dark", 
                     "spr_hl": "diamond", 
-                    "on_click": self.revert_status_screen,
+                    "on_click": lambda **args: self.revert_status_screen(),
                     "id": "custom_status_btn"
             })
 
@@ -33,14 +33,14 @@ class JEScreens:
                 "pos": [12, 9], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond", 
-                "on_click": lambda: self.button_move_player("u"),
+                "on_click": lambda **args: self.button_move_player("u"),
                 "id": "move_up"
             }, 
             {
                 "pos": [11, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.button_move_player("l"),
+                "on_click": lambda **args: self.button_move_player("l"),
                 "id": "move_left"
                 
             },
@@ -48,14 +48,14 @@ class JEScreens:
                 "pos": [12, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.button_move_player("d"),
+                "on_click": lambda **args: self.button_move_player("d"),
                 "id": "move_down"
             },
             {
                 "pos": [13, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.button_move_player("r"),
+                "on_click": lambda **args: self.button_move_player("r"),
                 "id": "move_right"
             },
         ]
@@ -312,6 +312,15 @@ class JEScreens:
                 self.draw_arbitrary(xy, img_highlight)
             else:
                 self.draw_arbitrary(xy, img)
+
+        for mz in self.mouse_zones:
+            px = precise_cursor[0]
+            py = precise_cursor[1]
+            if px > mz["top_left"] and px < mz['top_right'] and py > mz['bottom_left'] and py < mz['bottom_right']:
+                if mz.get("on_highlight", None):
+                    mz['on_highlight'](state = self, mz = mz)
+
+        #pygame.draw.rect(self.screen,(255,0,0), (0, 100, 100, 100), 1)
 
         if len(self.dialog_stack) > 0:
             def spl(s, *, lim=40):

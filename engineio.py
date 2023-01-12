@@ -21,7 +21,7 @@ class JEIO:
                     # mouse cursor is in same tile as the button
                     if pos == xy:
                         if button.get("on_click", None): # send to the buttons on_click event if it exists
-                            button["on_click"]()
+                            button["on_click"](state = self)
 
             for mz in self.mouse_zones:
                 px = event.pos[0]
@@ -30,6 +30,7 @@ class JEIO:
                     #print(event.button == mz['button'], event.button, mz['button'])
                     if event.button == mz['button']:
                         #print(f"{event.pos} is inside {mz}")
+                        mz['payload']['state'] = self
                         mz['callback'](**mz['payload'])
 
     def delete_button(self, bid):
@@ -65,6 +66,13 @@ class JEIO:
 
         def null_cb(**args):
             pass
+        
+        def mz_highlight_inv(**args):
+            x = args['mz']['top_left'] #+ 8 #+ args['mz']['top_right']
+            y = args['mz']['bottom_left'] + 8
+            xx = args['mz']['top_left'] + 160#args['mz']['top_right']
+            yy = args['mz']['bottom_left'] + 8
+            pygame.draw.line(self.screen, (255,255,255), (x, y), (xx, yy))
 
         if "use" in item['events'].keys():
             self.inventory_menu_labels.append("Use")
@@ -72,7 +80,8 @@ class JEIO:
                                     "bottom_left": bottom_left, "bottom_right": bottom_right,
                                     "group": "inventory",
                                     "button": 1,                "payload": {"item": item},
-                                    "callback": use_item})
+                                    "callback": use_item,
+                                    "on_highlight": mz_highlight_inv})
             bottom_left     += modify_by
             bottom_right    += modify_by
 
@@ -82,7 +91,8 @@ class JEIO:
                                     "bottom_left": bottom_left, "bottom_right": bottom_right,
                                     "group": "inventory",
                                     "button": 1,                "payload": {"item": item},
-                                    "callback": null_cb})
+                                    "callback": null_cb,
+                                    "on_highlight": mz_highlight_inv})
             bottom_left     += modify_by
             bottom_right    += modify_by
 
@@ -92,7 +102,8 @@ class JEIO:
                                     "bottom_left": bottom_left, "bottom_right": bottom_right,
                                     "group": "inventory",
                                     "button": 1,                "payload": {"item": item},
-                                    "callback": null_cb})
+                                    "callback": null_cb,
+                                    "on_highlight": mz_highlight_inv})
             bottom_left     += modify_by
             bottom_right    += modify_by
 
@@ -102,7 +113,8 @@ class JEIO:
                                     "bottom_left": bottom_left, "bottom_right": bottom_right,
                                     "group": "inventory",
                                     "button": 1,                "payload": {"item": item},
-                                    "callback": null_cb})
+                                    "callback": null_cb,
+                                    "on_highlight": mz_highlight_inv})
 
             bottom_left     += modify_by
             bottom_right    += modify_by
@@ -112,10 +124,17 @@ class JEIO:
         self.purge_mz("status_screen")
         self.purge_mz("inv_item_menu")
         modify_by       = 8
-        top_left        = 385
+        top_left        = 375
         top_right       = 520
         bottom_left     = 55
         bottom_right    = 65
+        
+        def mz_highlight_inv(**args):
+            x = args['mz']['top_left'] #+ args['mz']['top_right']
+            y = args['mz']['bottom_left'] + 8
+            xx = args['mz']['top_left'] + 65 #args['mz']['top_right']
+            yy = args['mz']['bottom_left'] + 8
+            pygame.draw.line(self.screen, (255,255,255), (x, y), (xx, yy))
 
         for item in self.player_object["contains"]:
             self.mouse_zones.append({"top_left": top_left, 
@@ -125,7 +144,8 @@ class JEIO:
                                     "group": "status_screen",
                                     "button": 1,
                                     "payload": {"item": item},
-                                    "callback": self.mz_callback_inventory})
+                                    "callback": self.mz_callback_inventory,
+                                    "on_highlight": mz_highlight_inv})
             #print(item)
             bottom_left     += modify_by
             bottom_right    += modify_by

@@ -39,6 +39,7 @@ class World:
             self.new_status_screen(com_screen)
 
         self.global_functions["use_com"] = use_com
+        
         for junk in range(0, 5):
             f = self._entity(tag=f"junk_{junk}", sprite="circle", x=0, y=3+junk, name="Junk", solid=False, 
             properties=["inventory"], weight=1, events={"use": "use_item"},
