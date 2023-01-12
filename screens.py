@@ -8,33 +8,55 @@ class JEScreens:
     def button_move_player(self, d):
         if not self.combat_data["active"]:
             self.move_player(d)
+    
+    def revert_status_screen(self):
+        self.delete_button("custom_status_btn")
+        self.override_status = None
+
+    def new_status_screen(self, fn, closable = True):
+        self.override_status = fn
+
+        if closable:
+            self.buttons.append({
+                    "pos": [11, 0], 
+                    "spr": "diamond_dark", 
+                    "spr_hl": "diamond", 
+                    "on_click": self.revert_status_screen,
+                    "id": "custom_status_btn"
+            })
 
     def switch_to_main_scene(self):
+        self.override_status = None
         self.current_scene = self.main_scene
         self.buttons = [
             {
                 "pos": [12, 9], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond", 
-                "on_click": lambda: self.button_move_player("u")
+                "on_click": lambda: self.button_move_player("u"),
+                "id": "move_up"
             }, 
             {
                 "pos": [11, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.button_move_player("l")
+                "on_click": lambda: self.button_move_player("l"),
+                "id": "move_left"
+                
             },
             {
                 "pos": [12, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.button_move_player("d")
+                "on_click": lambda: self.button_move_player("d"),
+                "id": "move_down"
             },
             {
                 "pos": [13, 10], 
                 "spr": "diamond_dark", 
                 "spr_hl": "diamond",
-                "on_click": lambda: self.button_move_player("r")
+                "on_click": lambda: self.button_move_player("r"),
+                "id": "move_right"
             },
         ]
 
@@ -186,6 +208,7 @@ class JEScreens:
         lbl_s = "stats"
         lbl_i = "inventory"
         lbl_g = "goals"
+
         if precise_cursor[0] > 370 and precise_cursor[0] < 422:
             if precise_cursor[1] > 8 and precise_cursor[1] < 25:
                 lbl_s = lbl_s.upper()
@@ -198,7 +221,10 @@ class JEScreens:
             if precise_cursor[1] > 8 and precise_cursor[1] < 25:
                 lbl_g = lbl_g.upper()  
 
-        if self.combat_data["active"]:
+        if self.override_status != None:
+            self.override_status(self)
+
+        elif self.combat_data["active"]:
             i = 7
             for ent in self.combat_data["entities"]:
                 ent = self.get_entity(ent)
@@ -210,6 +236,9 @@ class JEScreens:
             self.write_bmp(text_col, 1, f" [{lbl_s}] [{lbl_i}] [{lbl_g}]")
             self.write_bmp(text_col+10, 2, " -- Stats --")
 
+            def draw_bar(pct):
+                pct = round(pct, -1)
+                
             # Get health and energy values as percentage
             hp = 100*(player['health']/player['health_max'])
             ep = 100*(player['energy']/player['energy_max'])
@@ -365,7 +394,11 @@ class JEScreens:
     def switch_status_scene(self, status):
         print(f"Activating status screen {status}")
         self.status_screen = status
-
+        self.purge_mz("status_screen")
+        self.purge_mz("inv_item_menu")
         if status == "inventory": #build mouse zones for each inventory item
-
             self.update_inventory_mousezones()
+
+        if status == "goals":
+            pass
+            

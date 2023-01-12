@@ -26,6 +26,19 @@ class World:
             description="A set of medical supplies.")
         self.set_zone("medkit", "the_bar", x=7, y=6)
 
+        c = self._entity(tag="communicator", sprite="circle", x=3, y=3, name="Communicator", solid=False, 
+            properties=["inventory"], weight=1, events={"use": "use_com"},
+            description="A communication device.")
+        self.set_zone(c, "the_bar")
+
+        def com_screen(main):
+            self.write_bmp(50, 1, f"Communicator v0.1")
+
+
+        def use_com(**args):
+            self.new_status_screen(com_screen)
+
+        self.global_functions["use_com"] = use_com
         for junk in range(0, 5):
             f = self._entity(tag=f"junk_{junk}", sprite="circle", x=0, y=3+junk, name="Junk", solid=False, 
             properties=["inventory"], weight=1, events={"use": "use_item"},

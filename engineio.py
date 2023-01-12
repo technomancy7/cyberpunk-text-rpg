@@ -32,6 +32,12 @@ class JEIO:
                         #print(f"{event.pos} is inside {mz}")
                         mz['callback'](**mz['payload'])
 
+    def delete_button(self, bid):
+        for btn in self.buttons:
+            if bid == btn.get('id', None):
+                self.buttons.remove(btn)
+                return
+
     def purge_mz(self, grp):
         self.mouse_zones = list(filter(lambda a: a['group'] != grp, self.mouse_zones))
 
@@ -49,9 +55,16 @@ class JEIO:
         bottom_left     = 55
         bottom_right    = 65
         
+        def use_item(**args):
+            evt = args['item']['events']['use']
+            if self.global_functions.get(evt, None):
+                #print("Pushing use item")
+                self.global_functions[evt](item = args['item'])
+            else:
+                print(f"Event {evt} not registered")
+
         def null_cb(**args):
-            print(f"No callback defined yet.")
-            print(f"{json.dumps(args, indent=4)}")
+            pass
 
         if "use" in item['events'].keys():
             self.inventory_menu_labels.append("Use")
@@ -59,7 +72,7 @@ class JEIO:
                                     "bottom_left": bottom_left, "bottom_right": bottom_right,
                                     "group": "inventory",
                                     "button": 1,                "payload": {"item": item},
-                                    "callback": null_cb})
+                                    "callback": use_item})
             bottom_left     += modify_by
             bottom_right    += modify_by
 
@@ -96,7 +109,8 @@ class JEIO:
 
     def update_inventory_mousezones(self):
         # keep track and build the clickable zones of the UI for each item in the inventory
-        self.purge_mz("inventory")
+        self.purge_mz("status_screen")
+        self.purge_mz("inv_item_menu")
         modify_by       = 8
         top_left        = 385
         top_right       = 520
@@ -108,7 +122,7 @@ class JEIO:
                                     "top_right": top_right,
                                     "bottom_left": bottom_left,
                                     "bottom_right": bottom_right,
-                                    "group": "inventory",
+                                    "group": "status_screen",
                                     "button": 1,
                                     "payload": {"item": item},
                                     "callback": self.mz_callback_inventory})

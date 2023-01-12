@@ -13,7 +13,7 @@ class EternalTerminal:
         self._etos_new_file(name="SELF", ftype="system", location="/system/")
         self._etos_new_file(name="INTERFACE", ftype="system", location="/system/")
         self._etos_new_file(name="PERCEPTION", ftype="system", location="/system/")
-        print(self.virtual_fs)
+        #print(self.virtual_fs)
 
 
     @property

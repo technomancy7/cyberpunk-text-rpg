@@ -66,7 +66,9 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         self.buttons = []
         self.mouse_zones = []
 
+
         self.current_scene = None
+        self.override_status = None
         #self.switch_to_main_scene()
         self.switch_to_fst()
         self.cfg = {}
@@ -85,6 +87,10 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
             "wood": pygame.image.load(f"{self.app_path}img/tiles/wood.png"),
             "diamond": pygame.image.load(f"{self.app_path}img/system/diamond.png"),
             "diamond_dark": pygame.image.load(f"{self.app_path}img/system/diamond_dark.png"),
+        }
+
+        self.music = {
+            "test": pygame.mixer.music.load(f"{self.app_path}/audio/bgm/catch22.xm")
         }
 
         # global values
@@ -183,6 +189,10 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         self.terminal_prompt = None
         # build the default world
         if(autobuild_world): self.build_world()
+
+    def play_music(self, ms):
+        pygame.mixer.music.load(f"{self.app_path}/audio/bgm/{ms}")
+        pygame.mixer.music.play()
 
     def save_config(self):
         with open(f"{self.app_path}config.json", "w+") as f:
