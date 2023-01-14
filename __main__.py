@@ -136,7 +136,10 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         self.combat_data = {
             "entities": [], #list of entities participating in the current combat scene
             "turns": 0, #current number of turns
-            "active": False, #is combat currently active, can be turned off to pause a battle
+            "active": False, #is combat currently active, can be turned off to pause a battle,
+            "action_list": [], #actions on the stack
+            "waiting": False, #Don't progress the DT counters
+            "beat": 25, #Delay that the battle proceeds on
         }
 
         self.selected_inventory = ""
@@ -149,7 +152,16 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         self.raw_ticks  = 0
         self.seconds    = 0
         self.clock      = pygame.time.Clock()
-        self.ticks      = {}
+        self.ticks      = {} #key:  {"fn": fn(<state>), "limit": -1, "ran": 0}  
+                             # -> events that run every tick `limit` number of times
+        self.loops     = {} #key:  {"fn": fn(<state>), "limit": -1, "ran": 0} 
+                             # -> events that run every second `limit` number of times
+        self.beats      = {} #key: {"delay": num, "fn": fn(<state>), "limit": -1, "ran": 0} 
+                             #      -> runs every `delay` `limit` number of times
+        self.timers     = {} #key: {'countdown': num, "fn": fn, "limit": 1, "ran": 0} 
+                             #      -> runs fn `limit` number of times
+
+        #self.beats['test'] = {"delay": 25, "fn": lambda s: print("Beat!"), "limit": 5, "ran": 0}
 
         # containers for the text input system
         self.text_buffer        = []
@@ -165,27 +177,8 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         self.dialog_stack       = []
         self.dialog_msg_proxy   = ""
 
-        self.goals = []
-    
-        self.mouse_zones.append({"top_left": 370,      "top_right": 422,
-                        "bottom_left": 8, "bottom_right": 25,
-                        "group": "status_ui",
-                        "button": 1,                "payload": {"status": "stats"},
-                        "callback": self.core_mz_callback})
-
-
-        self.mouse_zones.append({"top_left": 438,      "top_right": 512,
-                        "bottom_left": 8, "bottom_right": 25,
-                        "group": "status_ui",
-                        "button": 1,                "payload": {"status": "inventory"},
-                        "callback": self.core_mz_callback})
-
-        self.mouse_zones.append({"top_left": 530,      "top_right": 582,
-                        "bottom_left": 8, "bottom_right": 25,
-                        "group": "status_ui",
-                        "button": 1,                "payload": {"status": "goals"},
-                        "callback": self.core_mz_callback})                
-
+        self.goals = []              
+        self.init_status_mz()
         self.terminal_prompt = None
         # build the default world
         if(autobuild_world): self.build_world()
@@ -359,12 +352,82 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
 
     def global_timer(self):
         # called every second (roughly)
-        pass
+        for key in self.timers.copy().keys():
+            v = self.timers[key]
+            v['countdown'] -= 1
+            if v['countdown'] == 0:
+                v['fn'](self)
+                if v['limit'] > 0:
+                    v['ran'] += 1
+                    if v['ran'] >= v['limit']:
+                        self.delete_timer(key)
+                    else:
+                        v['countdown'] = v['reset_to']
 
+    def add_tick(self, tag, fn, *, limit = -1):
+        self.ticks[tag] = {
+            "fn": fn,
+            "limit": limit,
+            "ran": 0
+        }
+
+    def delete_tick(self, tag): 
+        try:
+            del self.ticks[tag]
+        except:pass
+
+    def add_loop(self, tag, fn, *, limit = -1):
+        self.loops[tag] = {
+            "fn": fn,
+            "limit": limit,
+            "ran": 0
+        }
+
+    def delete_loop(self, tag): 
+        try:
+            del self.loops[tag]
+        except:pass
+        
+    def add_beat(self, tag, fn, delay, *, limit = -1):
+        self.beats[tag] = {
+            "fn": fn,
+            "limit": limit,
+            "ran": 0,
+            "delay": delay
+        }
+
+    def delete_beat(self, tag): 
+        try:
+            del self.beats[tag]
+        except:pass
+        
+    def add_timer(self, tag, fn, delay, *, limit = -1):
+        self.timers[tag] = {
+            "fn": fn,
+            "limit": limit,
+            "ran": 0,
+            "countdown": delay,
+            "reset_to": delay
+        }
+
+    def delete_timer(self, tag): 
+        try:
+            del self.timers[tag]
+        except:pass
+        
     def global_tick(self, dt):
         # add deltatime (delay between last frame in milliseconds) to overall counter
         self.dt         += dt
         self.raw_ticks  += 1
+
+        for key in self.beats.copy().keys():
+            beat = self.beats[key]
+            if self.raw_ticks % beat['delay'] == 0:
+                beat['fn'](self)
+                if beat['limit'] > 0:
+                    beat['ran'] += 1
+                    if beat['ran'] >= beat['limit']:
+                        self.delete_beat(key)
 
         if self.raw_ticks % 1 == 0:
             for i, val in enumerate(self.msg_history):
@@ -381,9 +444,23 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
             self.seconds = int(self.dt)
             self.global_timer()
 
-        for k, v in self.ticks.items():
-            v(self.dt, dt)
+            for key in self.loops.copy().keys():
+                v = self.loops[key]
+                v['fn'](self)
+                if v['limit'] > 0:
+                    v['ran'] += 1
+                    if v['ran'] >= v['limit']:
+                        self.delete_loop(key)
 
+        for key in self.ticks.copy().keys():
+            v = self.ticks[key]
+            v['fn'](self)
+            if v['limit'] > 0:
+                v['ran'] += 1
+                if v['ran'] >= v['limit']:
+                    self.delete_tick(key)
+
+ 
     def new_generic_event(self, name):    
         self.global_functions[name] = pygame.USEREVENT+len(self.global_functions.keys())
 

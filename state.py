@@ -1,24 +1,62 @@
 import json, os, random
 
 class JEState:
+    def combat_beat(self, state):
+        if self.combat_data['active']:
+            if not self.combat_data['waiting']:
+                for ent in self.combat_data["entities"]:
+                    e = self.get_entity(ent)
+                    e['dt'] -= 1
+                    
+                    if e['dt'] == 0:
+                        if e['manual_control'] == True:
+                            self.combat_data['waiting'] = True
+                            self.log(f"It is {e['name']}'s turn, what will you do?")
+                            #@todo prompt user for input
+                            # menu and text input both work
+                            # then turn waiting off
+                        else:
+                            pass
+                            #@todo Run enemy AI script here
+
     def start_combat(self, *entities):
-        #@todo sort the entities array by lowest DT
         #@todo get recoloured bmp font so that enemies and allies can be identified in the list
         self.combat_data['entities'] = entities
         self.combat_data["turns"] = 0
         self.combat_data['active'] = True
+        beat = self.combat_data['beat']
+
+        def combat_screen(state):
+            i = 7
+            #@todo sort the entities array by lowest DT
+            for ent in state.combat_data["entities"]:
+                ent = state.get_entity(ent)
+                state.write_bmp(45, i, f"{ent['name']} ({ent['dt']})")
+                i += 1
+
+        self.new_status_screen(combat_screen, closable=False)
 
         for ent in entities:
             e = self.get_entity(ent)
             #print("combat", e)
             e['dt'] = random.randint(e['skills']["agility"], e['skills']["agility"] + random.randint(1, 10))
+        
+        self.add_beat("combat", self.combat_beat, beat)
 
+    def resume_combat(self):
+        if self.combat_data['active'] == False and len(self.combat_data['entities']) > 0:
+            self.combat_data["active"] = True
+            self.add_beat("combat", self.combat_beat, self.combat_data['beat'])
+            
     def end_combat(self, *, pause = False):
         self.combat_data["active"] = False
+        self.delete_beat("combat")
         if not pause:
             for ent in self.combat_data['entities']:
                 e = self.get_entity(ent)
                 e['dt'] = 0
+            
+            self.revert_status_screen()
 
             self.combat_data["turns"] = 0    
             self.combat_data['entities'] = []
@@ -245,6 +283,14 @@ class JEState:
                     self.trigger_event(item, "on_player")
             self.trigger_global("new_turn")
 
+
+    def set_data(self, ent, key, value):
+        ent = self.get_entity(ent)
+        ent['data'][key] = value
+
+    def get_data(self, ent, key):
+        ent = self.get_entity(ent)
+        return ent['data'].get(key, None)
 
     def set_pos(self, ent, x, y):
         ent = self.get_entity(ent)

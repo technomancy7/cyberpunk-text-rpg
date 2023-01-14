@@ -10,7 +10,8 @@ class World:
         self.init_etos()
         # SETUP PLAYER
         self.player = "player"
-        self._entity(tag="player", sprite="player", x=2, y=2, alliance="player", name="The Player")
+        self._entity(tag = "player", sprite = "player", x = 2, y = 2, alliance = "player", 
+                        name = "The Player", manual_control = True)
 
         # ZONE 1: THE BAR
         self._zone(name="The Bar", tag="the_bar")
@@ -19,12 +20,13 @@ class World:
         f = self._entity(tag="pistol", sprite="circle", name="9mm Pistol", solid=False, 
             properties=["inventory", "combat"], slot = "weapon", weight=1, x=6, y=6,
             description="""A basic old-world pistol, barely<br>functional.""")
-        self.set_zone("pistol", "the_bar")
+        self.set_data(f, "ammo", 9)
+        self.set_zone(f, "the_bar")
 
-        f = self._entity(tag="medkit", sprite="circle", x=6, y=6, name="Medkit", solid=False, 
+        md = self._entity(tag="medkit", sprite="circle", x=6, y=6, name="Medkit", solid=False, 
             properties=["inventory"], weight=1, events={"use": "use_item"},
             description="A set of medical supplies.")
-        self.set_zone("medkit", "the_bar", x=7, y=6)
+        self.set_zone(md, "the_bar", x=7, y=6)
 
         c = self._entity(tag="communicator", sprite="circle", x=3, y=3, name="Communicator", solid=False, 
             properties=["inventory"], weight=1, events={"use": "use_com"},
@@ -47,12 +49,12 @@ class World:
             self.set_zone(f"junk_{junk}", "the_bar")
 
 
-        f = self._entity(tag="target_dummy", sprite="circle", x=2, y=6, name="target dummy")
-        f["ai_scripts"]["field"] = ["l", "r"]
-        self.set_hostility(f, "player", -1)
-        f["barks"]["bump"] = ["Hey!", "Watch it!", "This is a very long message that will hopefully be split properly in the message history, idk tho."]
-        self.set_zone(f, "the_bar")
-        self.set_event(f, "bumped", "start_combat")
+        dmmy = self._entity(tag="target_dummy", sprite="circle", x=2, y=6, name="target dummy")
+        dmmy["ai_scripts"]["field"] = ["l", "r"]
+        self.set_hostility(dmmy, "player", -1)
+        dmmy["barks"]["bump"] = ["Hey!", "Watch it!", "This is a very long message that will hopefully be split properly in the message history, idk tho."]
+        self.set_zone(dmmy, "the_bar")
+        self.set_event(dmmy, "bumped", "start_combat")
         
         ep = self._entity(tag="bar_out_exit", sprite="circle", x=7, y=0, name="Exit to street", solid=False)
         ep['data']['exit'] = {"map": "the_street", "pos": [2, 2]}
@@ -73,7 +75,7 @@ class World:
         self.set_zone("bar_entr", "the_street")
         self.set_event(ep2, "on_player", "teleport")
 
-        #
+        self.add_timer("test", lambda s: print("Every 4s!!"), 4)
 
         if self.cfg.get("skip_intro", False) == True:
             self.variables['progress'] = 4

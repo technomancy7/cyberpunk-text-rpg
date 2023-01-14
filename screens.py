@@ -12,10 +12,39 @@ class JEScreens:
     def revert_status_screen(self):
         self.delete_button("custom_status_btn")
         self.override_status = None
+        self.init_status_mz()
+        self.switch_status_scene()
+
+    def init_status_mz(self):
+        self.mouse_zones.append({"top_left": 370,      "top_right": 422,
+                        "bottom_left": 8, "bottom_right": 25,
+                        "group": "status_ui",
+                        "button": 1,                "payload": {"status": "stats"},
+                        "callback": self.core_mz_callback})
+
+
+        self.mouse_zones.append({"top_left": 438,      "top_right": 512,
+                        "bottom_left": 8, "bottom_right": 25,
+                        "group": "status_ui",
+                        "button": 1,                "payload": {"status": "inventory"},
+                        "callback": self.core_mz_callback})
+
+        self.mouse_zones.append({"top_left": 530,      "top_right": 582,
+                        "bottom_left": 8, "bottom_right": 25,
+                        "group": "status_ui",
+                        "button": 1,                "payload": {"status": "goals"},
+                        "callback": self.core_mz_callback})  
 
     def new_status_screen(self, fn, closable = True):
         self.override_status = fn
+        self.purge_mz("status_ui")
+        self.purge_mz("status_screen")
+        self.purge_mz("inv_item_menu")
+        self.purge_mz("inventory")
 
+        self.selected_inventory = ""
+        self.inventory_menu_labels = []
+        
         if closable:
             self.buttons.append({
                     "pos": [11, 0], 
@@ -224,13 +253,6 @@ class JEScreens:
         if self.override_status != None:
             self.override_status(self)
 
-        elif self.combat_data["active"]:
-            i = 7
-            for ent in self.combat_data["entities"]:
-                ent = self.get_entity(ent)
-                self.write_bmp(text_col, i, f"{ent['name']} ({ent['dt']})")
-                i += 1
-
         elif self.status_screen == "stats":
             lbl_s = lbl_s.upper()
             self.write_bmp(text_col, 1, f" [{lbl_s}] [{lbl_i}] [{lbl_g}]")
@@ -292,7 +314,7 @@ class JEScreens:
                 self.write_bmp(text_col+25, lbli, f"{lbl}")
                 lbli += 1
 
-            if self.selected_inventory != "":
+            if self.selected_inventory != "" and self.selected_inventory != None:
                 desc = self.get_entity(self.selected_inventory)['description']
                 start = 183
                 #self.write_bmp(text_col, 25, f"{desc}")
@@ -400,11 +422,16 @@ class JEScreens:
         if self.current_scene == self.main_scene: return True
         return False
 
-    def switch_status_scene(self, status):
+    def switch_status_scene(self, status = None):
         print(f"Activating status screen {status}")
+        if status == None: 
+            status = self.status_screen
+            
         self.status_screen = status
+
         self.purge_mz("status_screen")
         self.purge_mz("inv_item_menu")
+
         if status == "inventory": #build mouse zones for each inventory item
             self.update_inventory_mousezones()
 

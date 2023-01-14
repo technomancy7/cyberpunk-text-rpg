@@ -66,6 +66,8 @@ class JETemplates:
             "alliances": {
                 "generic": 0
             },
+            "party": [], # list of tags for NPC's considered part of the player party, for battles etc
+            "manual_control": False, # does the player input this entities actions in battle
             "barks": {},
         }
         o.update(**args)
