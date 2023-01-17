@@ -17,19 +17,25 @@ class World:
         self._zone(name="The Bar", tag="the_bar")
         self.set_zone("player", "the_bar")
 
-        f = self._entity(tag="pistol", sprite="circle", name="9mm Pistol", solid=False, 
+        src_pistol = self._entity(tag="pistol", sprite="circle", name="9mm Pistol", solid=False, 
             properties=["inventory", "combat"], slot = "weapon", weight=1, x=6, y=6,
             description="""A basic old-world pistol, barely<br>functional.""")
-        self.set_data(f, "ammo", 9)
+
+        self.set_data(src_pistol, "ammo", 9)
+
+        f = self.clone_entity("pistol")
+        
         self.set_zone(f, "the_bar")
 
-        md = self._entity(tag="medkit", sprite="circle", x=6, y=6, name="Medkit", solid=False, 
+        src_medkit = self._entity(tag="medkit", sprite="circle", x=6, y=6, name="Medkit", solid=False, 
             properties=["inventory"], weight=1, events={"use": "use_item"},
             description="A set of medical supplies.")
+
+        md = self.clone_entity("medkit")
         self.set_zone(md, "the_bar", x=7, y=6)
 
         c = self._entity(tag="communicator", sprite="circle", x=3, y=3, name="Communicator", solid=False, 
-            properties=["inventory"], weight=1, events={"use": "use_com"},
+            properties=["inventory", "quest"], weight=1, events={"use": "use_com"},
             description="A communication device.")
         self.set_zone(c, "the_bar")
 
@@ -42,11 +48,17 @@ class World:
 
         self.global_functions["use_com"] = use_com
         
-        for junk in range(0, 5):
-            f = self._entity(tag=f"junk_{junk}", sprite="circle", x=0, y=3+junk, name="Junk", solid=False, 
+        jy = 3
+        jnk = self._entity(tag=f"junk", sprite="circle", x=0, y=jy, name="Junk", solid=False, 
             properties=["inventory"], weight=1, events={"use": "use_item"},
             description="Some junk.")
-            self.set_zone(f"junk_{junk}", "the_bar")
+            
+        self.set_zone(jnk, "the_bar")
+
+        for junk in range(0, 5):
+            nj = self.clone_entity(jnk)
+            jy += 1
+            self.set_zone(nj, "the_bar", x=0, y=jy)
 
 
         dmmy = self._entity(tag="target_dummy", sprite="circle", x=2, y=6, name="target dummy")
@@ -75,7 +87,7 @@ class World:
         self.set_zone("bar_entr", "the_street")
         self.set_event(ep2, "on_player", "teleport")
 
-        self.add_timer("test", lambda s: print("Every 4s!!"), 4)
+        self.add_timer("test", lambda s: print("Test timer!!"), 4)
 
         if self.cfg.get("skip_intro", False) == True:
             self.variables['progress'] = 4

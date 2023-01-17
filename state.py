@@ -1,6 +1,72 @@
 import json, os, random
 
 class JEState:
+    def get_zones(self, srctag):
+        out = []
+        for ent in self.zones:
+            if ent['tag'] == srctag:
+                out.append(ent)
+            else:
+                tag = ent['tag']
+                if "_" in tag and tag.split("_")[-1].isdigit():
+                    if "_".join(tag.split("_")[:-1]) == srctag:
+                        out.append(ent)
+
+        return out
+
+    def clone_zone(self, ent):
+        ent = self.get_zone(ent)
+        c = ent.copy()
+        tag = ent['tag']
+
+        if "_" in tag:
+            if tag.split("_")[-1].isdigit():
+                basetag = "_".join(tag.split("_")[:-1])
+                cnt = len(self.get_zones(basetag))
+                tag = basetag+"_"+str(cnt+1)
+            else:
+                tag = tag+"_1"
+        else:
+            cnt = len(self.get_zones(tag))
+            tag = tag+"_"+str(cnt+1)
+
+        c['tag'] = tag
+        self.zones.append(c)
+        return c
+
+    def get_entities(self, srctag):
+        out = []
+        for ent in self.entities:
+            if ent['tag'] == srctag:
+                out.append(ent)
+            else:
+                tag = ent['tag']
+                if "_" in tag and tag.split("_")[-1].isdigit():
+                    if "_".join(tag.split("_")[:-1]) == srctag:
+                        out.append(ent)
+
+        return out
+
+    def clone_entity(self, ent):
+        ent = self.get_entity(ent)
+        c = ent.copy()
+        tag = ent['tag']
+
+        if "_" in tag:
+            if tag.split("_")[-1].isdigit():
+                basetag = "_".join(tag.split("_")[:-1])
+                cnt = len(self.get_entities(basetag))
+                tag = basetag+"_"+str(cnt+1)
+            else:
+                tag = tag+"_1"
+        else:
+            cnt = len(self.get_entities(tag))
+            tag = tag+"_"+str(cnt+1)
+
+        c['tag'] = tag
+        self.entities.append(c)
+        return c
+
     def combat_beat(self, state):
         if self.combat_data['active']:
             if not self.combat_data['waiting']:
@@ -303,7 +369,7 @@ class JEState:
 
         if ent["location"] != "":
             loc = self.get_zone(ent['location'])
-            if loc != None:
+            if loc != None and ent['tag'] in loc['contains']:
                 loc['contains'].remove(ent['tag'])
         
         ent['location'] = new_zone['tag']

@@ -58,6 +58,12 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
         pygame.init()
         pygame.font.init()
 
+        self.events = {
+            "key_down": [self.handle_key_down],
+            "mouse_down": [self.handle_mouse_down],
+            "quit": []
+        }
+
         # Location the current script file is located in
         # Acts as home for any files related to this project
         self.app_path = os.path.dirname(os.path.realpath(__file__))+"/"
@@ -464,6 +470,14 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
     def new_generic_event(self, name):    
         self.global_functions[name] = pygame.USEREVENT+len(self.global_functions.keys())
 
+    def add_event(self, event_type, fn):
+        if self.events.get(event_type, None) != None:
+            self.events[event_type].append(fn)
+
+    def remove_event(self, event_type, fn):
+        if self.events.get(event_type, None) != None:
+            self.events[event_type].remove(fn)
+
     def loop(self):
         # main loop
         while self.running:
@@ -471,14 +485,18 @@ class Main(state.JEState, screens.JEScreens, commands.JECommand, gui.JEGUI, temp
             for event in pygame.event.get():
                 # only do something if the event if of type QUIT
                 if event.type == pygame.QUIT:
+                    for evt in self.events['quit']:
+                        evt(self, event)
                     # change the value to False, to exit the main loop
                     self.running = False
 
                 if event.type == pygame.KEYDOWN:
-                    self.handle_key_down(event)
+                    for evt in self.events['key_down']:
+                        evt(self, event)
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    self.handle_mouse_down(event)
+                    for evt in self.events['mouse_down']:
+                        evt(self, event)
 
                 if event.type == self.global_functions.get("intro"):
                     self.intro_scene()

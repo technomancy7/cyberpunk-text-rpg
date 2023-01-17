@@ -1,7 +1,7 @@
 import pygame, json
 
 class JEIO:
-    def handle_mouse_down(self, event):
+    def handle_mouse_down(self, state, event):
         #print(event)
         # user clicked event
         if self.current_scene == self.main_scene: # handling main scene
@@ -218,7 +218,7 @@ class JEIO:
                 self.cfg["keybinds"][command].append(key)
                 self.save_config()
 
-    def handle_key_down(self, event):
+    def handle_key_down(self, state, event):
         if self.print_key == True:
             self.log(f"Input: {pygame.key.name(event.key)}")
             self.print_key = False
