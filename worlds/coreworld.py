@@ -23,9 +23,15 @@ class World:
 
         self.set_data(src_pistol, "ammo", 9)
 
-        f = self.clone_entity("pistol")
-        
-        self.set_zone(f, "the_bar")
+
+        self.set_zone(self.clone_entity(src_pistol), "the_bar")
+
+
+        src_ck = self._entity(tag="knife", sprite="circle", name="Knife", solid=False, 
+            properties=["inventory", "combat"], slot = "weapon", weight=1, x=6, y=6,
+            description="""A basic old-world knife, barely<br>functional.""")
+
+        self.set_container(self.clone_entity(src_ck), self.player)
 
         src_medkit = self._entity(tag="medkit", sprite="circle", x=6, y=6, name="Medkit", solid=False, 
             properties=["inventory"], weight=1, events={"use": "use_item"},
@@ -67,7 +73,8 @@ class World:
         dmmy["barks"]["bump"] = ["Hey!", "Watch it!", "This is a very long message that will hopefully be split properly in the message history, idk tho."]
         self.set_zone(dmmy, "the_bar")
         self.set_event(dmmy, "bumped", "start_combat")
-        
+        self.set_container(self.clone_entity(src_ck), dmmy)
+
         ep = self._entity(tag="bar_out_exit", sprite="circle", x=7, y=0, name="Exit to street", solid=False)
         ep['data']['exit'] = {"map": "the_street", "pos": [2, 2]}
         self.set_zone("bar_out_exit", "the_bar")
